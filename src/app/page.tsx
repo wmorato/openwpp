@@ -1,153 +1,48 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { gsap } from 'gsap';
 import {
-  ArrowLeft,
   Bell,
-  CheckCheck,
   Clock,
-  MessageSquare,
   MoreVertical,
-  Paperclip,
   Phone,
   Search,
-  Send,
+  ArrowLeft,
+  MessageSquare
 } from 'lucide-react';
-import { layoutMessage } from '@/lib/pretext-utils';
 
-interface Chat {
-  id: string;
-  name: string;
-  unreadCount: number;
-  timestamp: number;
-}
+// Types
+import { Chat, Message, Contact } from '@/types';
 
-interface Message {
-  id: string;
-  from: string;
-  to?: string;
-  fromMe?: boolean;
-  body: string;
-  timestamp: number;
-  sender: string;
-  contentType?: string;
-  mediaMimeType?: string | null;
-  mediaFilename?: string | null;
-  mediaUrl?: string | null;
-}
+// Utils / Lib
+import { formatDateDivider } from '@/lib/frontend-utils';
 
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('') || 'WA';
-}
-
-function formatChatListTime(timestamp: number) {
-  if (!timestamp) return 'agora';
-
-  const date = new Date(timestamp * 1000);
-  const now = new Date();
-  const sameDay = date.toDateString() === now.toDateString();
-
-  return sameDay
-    ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
-}
-
-function formatMessageDateTime(timestamp: number) {
-  if (!timestamp) return 'Sem data';
-
-  return new Date(timestamp * 1000).toLocaleString([], {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function formatDateDivider(timestamp: number) {
-  if (!timestamp) return 'Sem data';
-
-  return new Date(timestamp * 1000).toLocaleDateString([], {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function renderMessageContent(msg: Message, lines: Array<{ text: string }>) {
-  const caption = msg.body?.trim();
-
-  if (msg.contentType === 'image' && msg.mediaUrl) {
-    return (
-      <div className="space-y-2">
-        <img src={msg.mediaUrl} alt={caption || 'Imagem'} className="wa-media wa-media--image" />
-        {caption ? <div className="text-sm leading-5 tracking-tight">{caption}</div> : null}
-      </div>
-    );
-  }
-
-  if (msg.contentType === 'video' && msg.mediaUrl) {
-    return (
-      <div className="space-y-2">
-        <video controls className="wa-media wa-media--video">
-          <source src={msg.mediaUrl} type={msg.mediaMimeType || 'video/mp4'} />
-        </video>
-        {caption ? <div className="text-sm leading-5 tracking-tight">{caption}</div> : null}
-      </div>
-    );
-  }
-
-  if (msg.contentType === 'audio' && msg.mediaUrl) {
-    return (
-      <div className="space-y-2">
-        <audio controls className="wa-media wa-media--audio">
-          <source src={msg.mediaUrl} type={msg.mediaMimeType || 'audio/ogg'} />
-        </audio>
-        {caption ? <div className="text-sm leading-5 tracking-tight">{caption}</div> : null}
-      </div>
-    );
-  }
-
-  if ((msg.contentType === 'document' || msg.contentType === 'file' || msg.contentType === 'sticker') && msg.mediaUrl) {
-    return (
-      <a href={msg.mediaUrl} target="_blank" rel="noreferrer" className="wa-file-card">
-        <div>
-          <strong>{msg.mediaFilename || 'Abrir arquivo'}</strong>
-          <p>{msg.mediaMimeType || 'Arquivo'}</p>
-        </div>
-      </a>
-    );
-  }
-
-  return (
-    <div className="space-y-0.5">
-      {lines.map((line, lineIndex) => (
-        <div key={lineIndex} className="text-sm leading-5 tracking-tight">
-          {line.text}
-        </div>
-      ))}
-    </div>
-  );
-}
+// Components
+import { MessageArea } from '@/components/chat/MessageArea';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { ChatListItem } from '@/components/chat/ChatListItem';
+import { ContactPicker } from '@/components/chat/ContactPicker';
+import { ContextMenu } from '@/components/chat/ContextMenu';
 
 export default function Home() {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [qrCode, setQrCode] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [syncStatus, setSyncStatus] = useState({ remaining: 0, syncing: false });
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Estados para novas funcionalidades
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactSearch, setContactSearch] = useState('');
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, message: Message } | null>(null);
 
   const selectedChatIdRef = useRef<string | null>(null);
   const chatListRef = useRef<HTMLDivElement>(null);
@@ -163,27 +58,30 @@ export default function Home() {
       if (currentId && (msg.from === currentId || msg.to === currentId)) {
         setMessages((prev) => [...prev, msg]);
       }
+    });
 
-      const chatId = msg.fromMe ? msg.to : msg.from;
+    socketInstance.on('chat-update', (updatedChat: Partial<Chat> & { id: string }) => {
       setChats((prevChats) => {
         const chatsCopy = [...prevChats];
-        const chatIndex = chatsCopy.findIndex((chat) => chat.id === chatId);
+        const chatIndex = chatsCopy.findIndex((chat) => chat.id === updatedChat.id);
 
-        if (chatIndex === -1) return prevChats;
-
-        const updatedChat = {
-          ...chatsCopy[chatIndex],
-          timestamp: msg.timestamp || chatsCopy[chatIndex].timestamp,
-        };
-
-        chatsCopy.splice(chatIndex, 1);
-        return [updatedChat, ...chatsCopy];
+        if (chatIndex !== -1) {
+          const fullChat = { ...chatsCopy[chatIndex], ...updatedChat };
+          chatsCopy.splice(chatIndex, 1);
+          return [fullChat, ...chatsCopy];
+        } else if (updatedChat.name) {
+          return [updatedChat as Chat, ...chatsCopy].slice(0, 100);
+        }
+        return chatsCopy;
       });
+    });
+
+    socketInstance.on('message-update', (updatedMsg: Message) => {
+      setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
     });
 
     socketInstance.on('messages', (data: { chatId: string; messages: Message[] }) => {
       if (data.chatId === selectedChatIdRef.current) {
-        console.log('Renderizando histórico para', data.chatId, 'Total:', data.messages.length);
         setMessages(data.messages);
         setTimeout(() => {
           if (messageContainerRef.current) {
@@ -202,10 +100,19 @@ export default function Home() {
       setIsReady(true);
       setQrCode(null);
       socketInstance.emit('get-chats');
+      socketInstance.emit('get-contacts');
     });
 
     socketInstance.on('chats', (data: Chat[]) => {
       setChats(data);
+    });
+
+    socketInstance.on('contacts', (data: Contact[]) => {
+      setContacts(data);
+    });
+
+    socketInstance.on('search-results', (data: Contact[]) => {
+      setContacts(data);
     });
 
     socketInstance.on('loading-messages', (isLoading: boolean) => {
@@ -226,6 +133,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowContactPicker(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, []);
+
+  useEffect(() => {
     const chatItems = chatListRef.current?.querySelectorAll('.chat-item');
     if (isReady && chatItems && chatItems.length > 0) {
       gsap.from(chatItems, {
@@ -238,24 +157,15 @@ export default function Home() {
     }
   }, [isReady, chats.length]);
 
-  useEffect(() => {
-    if (qrCode && qrRef.current) {
-      gsap.from(qrRef.current, {
-        scale: 0.92,
-        opacity: 0,
-        duration: 0.7,
-        ease: 'power3.out',
-      });
-    }
-  }, [qrCode]);
-
   const selectChat = (chat: Chat) => {
     setSelectedChat(chat);
     selectedChatIdRef.current = chat.id;
     setMessages([]);
     if (socket) {
       socket.emit('get-messages', chat.id);
+      socket.emit('mark-read', chat.id);
     }
+    setChats(prev => prev.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
   };
 
   const handleBackToList = () => {
@@ -263,44 +173,120 @@ export default function Home() {
     selectedChatIdRef.current = null;
   };
 
-  const handleSendMessage = () => {
-    if (socket && selectedChat && inputText.trim()) {
-      socket.emit('send-message', {
-        to: selectedChat.id,
-        body: inputText,
-      });
-      setInputText('');
+  const handleContextMenu = (e: React.MouseEvent, message: Message) => {
+    e.preventDefault();
+    setContextMenu({ x: e.pageX, y: e.pageY, message });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+    closeContextMenu();
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    closeContextMenu();
+  };
+
+  const scrollToMessage = (msgId: string) => {
+    const element = document.getElementById(msgId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('wa-message-row--highlight');
+      setTimeout(() => {
+        element.classList.remove('wa-message-row--highlight');
+      }, 1500);
     }
   };
 
-  const filteredChats = chats.filter((chat) =>
-    chat.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const messageItems = messages.reduce<Array<
-    | { type: 'divider'; key: string; label: string }
-    | { type: 'message'; key: string; message: Message }
-  >>((items, message, index) => {
-    const previous = messages[index - 1];
-    const currentLabel = formatDateDivider(message.timestamp);
-    const previousLabel = previous ? formatDateDivider(previous.timestamp) : null;
-
-    if (index === 0 || previousLabel !== currentLabel) {
-      items.push({
-        type: 'divider',
-        key: `divider-${currentLabel}-${index}`,
-        label: currentLabel,
-      });
-    }
-
-    items.push({
-      type: 'message',
-      key: `${message.id}-${index}`,
-      message,
+  const readAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = (reader.result as string).split(',')[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
+  };
 
-    return items;
-  }, []);
+  const handleFileUpload = async (file: File, asSticker = false) => {
+    if (socket && selectedChat) {
+      try {
+        const base64Data = await readAsBase64(file);
+        socket.emit('send-media', {
+          to: selectedChat.id,
+          data: base64Data,
+          mimetype: file.type,
+          filename: file.name,
+          caption: '',
+          asSticker
+        });
+      } catch (e) {
+        console.error('Erro ao ler arquivo:', e);
+      }
+    }
+  };
+
+  const handleShareContact = (contactId: string) => {
+    if (socket && selectedChat) {
+      socket.emit('send-contact', {
+        to: selectedChat.id,
+        contactId
+      });
+      setShowContactPicker(false);
+    }
+  };
+
+  const handleGetContacts = () => {
+    if (socket) {
+      socket.emit('get-contacts');
+      setShowContactPicker(true);
+    }
+  };
+
+  const filteredChats = useMemo(() => 
+    chats.filter((chat) => chat.name.toLowerCase().includes(searchTerm.toLowerCase())),
+  [chats, searchTerm]);
+
+  const filteredContacts = useMemo(() => {
+    if (!searchTerm) return [];
+    // Contacts are now pre-filtered by the server in search-results
+    const chatIds = new Set(filteredChats.map(c => c.id));
+    return contacts.filter((c) => !chatIds.has(c.id));
+  }, [contacts, searchTerm, filteredChats]);
+
+  const messageItems = useMemo(() => {
+    return messages.reduce<Array<
+      | { type: 'divider'; key: string; label: string }
+      | { type: 'message'; key: string; message: Message }
+    >>((items, message, index) => {
+      const previous = messages[index - 1];
+      const currentLabel = formatDateDivider(message.timestamp);
+      const previousLabel = previous ? formatDateDivider(previous.timestamp) : null;
+
+      if (index === 0 || previousLabel !== currentLabel) {
+        items.push({
+          type: 'divider',
+          key: `divider-${currentLabel}-${index}`,
+          label: currentLabel,
+        });
+      }
+
+      items.push({
+        type: 'message',
+        key: `${message.id}-${index}`,
+        message,
+      });
+
+      return items;
+    }, []);
+  }, [messages]);
 
   return (
     <main className="wa-root">
@@ -308,10 +294,7 @@ export default function Home() {
         <section ref={qrRef} className="wa-auth-card">
           <div className="wa-auth-badge">OpenWPP</div>
           <h1 className="wa-auth-title">Conecte o WhatsApp para abrir sua central de atendimento</h1>
-          <p className="wa-auth-copy">
-            Uma interface inspirada no WhatsApp Business: lista de conversas, bolhas bem separadas e
-            leitura confortável no desktop e no mobile.
-          </p>
+          <p className="wa-auth-copy">Abra o WhatsApp no seu celular, toque em Configurações &gt; Dispositivos Conectados e aponte a câmera para esta tela.</p>
 
           <div className="wa-auth-qr">
             {qrCode ? (
@@ -331,193 +314,163 @@ export default function Home() {
       ) : (
         <section className="wa-shell">
           <aside className={`wa-sidebar ${selectedChat ? 'wa-sidebar--mobile-hidden' : ''}`}>
-            <div className="wa-sidebar-top">
+            <header className="wa-sidebar-top">
               <div className="wa-user-pill">
-                <div className="wa-avatar wa-avatar--soft">OW</div>
-                <div>
-                  <p className="wa-user-title">OpenWPP Inbox</p>
+                <div className="wa-avatar">OW</div>
+                <div className="wa-chat-header-text">
+                  <h2 className="wa-user-title">OpenWPP Inbox</h2>
                   <p className="wa-user-subtitle">Painel de conversas e histórico</p>
                 </div>
               </div>
-              <button className="wa-icon-button" type="button" aria-label="Mais opções">
-                <MoreVertical size={18} />
-              </button>
-            </div>
+              <div className="wa-header-actions">
+                <button className="wa-icon-button" type="button" aria-label="Notificações">
+                  <Bell size={20} />
+                </button>
+                <button className="wa-icon-button" type="button" aria-label="Mais opções">
+                  <MoreVertical size={20} />
+                </button>
+              </div>
+            </header>
 
             {syncStatus.syncing && (
-              <div className="wa-notice">
-                <Bell size={18} className="text-[#128c7e]" />
-                <div>
-                  <p className="wa-notice-title">Sincronizando histórico</p>
-                  <p className="wa-notice-copy">{syncStatus.remaining} chats restantes</p>
+              <div className="wa-sync-banner">
+                <div className="wa-sync-info">
+                  <Bell className="animate-pulse" size={16} />
+                  <span>Sincronizando histórico</span>
                 </div>
+                <strong>{syncStatus.remaining} chats restantes</strong>
               </div>
             )}
 
             <div className="wa-searchbar">
-              <Search size={16} className="text-[#667781]" />
+              <Search className="text-gray-400" size={18} />
               <input
                 type="text"
                 placeholder="Pesquisar ou iniciar nova conversa"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchTerm(val);
+                  if (socket && val.length > 2) {
+                    socket.emit('search-contacts', val);
+                  } else if (val.length === 0) {
+                    setContacts([]);
+                  }
+                }}
               />
             </div>
 
             <div ref={chatListRef} className="wa-chatlist custom-scrollbar">
-              {filteredChats.map((chat) => {
-                const selected = selectedChat?.id === chat.id;
+              {filteredChats.map((chat) => (
+                <ChatListItem 
+                  key={chat.id} 
+                  chat={chat} 
+                  selected={selectedChat?.id === chat.id} 
+                  onSelect={selectChat} 
+                />
+              ))}
 
-                return (
-                  <button
-                    key={chat.id}
-                    type="button"
-                    onClick={() => selectChat(chat)}
-                    className={`chat-item wa-chatlist-item ${selected ? 'wa-chatlist-item--active' : ''}`}
-                  >
-                    <div className="wa-avatar">{getInitials(chat.name)}</div>
-                    <div className="wa-chat-meta">
-                      <div className="wa-chat-meta-row">
-                        <h3>{chat.name}</h3>
-                        <span>{formatChatListTime(chat.timestamp)}</span>
-                      </div>
-                      <div className="wa-chat-meta-row">
-                        <p>{chat.unreadCount > 0 ? `${chat.unreadCount} novas mensagens` : 'Toque para abrir a conversa'}</p>
-                        {chat.unreadCount > 0 && <strong>{chat.unreadCount}</strong>}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+              {filteredContacts.length > 0 && (
+                <>
+                  <div className="px-4 py-3 text-xs font-bold text-[#128c7e] bg-gray-50 uppercase tracking-widest border-y border-gray-100">
+                    Contatos
+                  </div>
+                  {filteredContacts.map((contact) => (
+                    <ChatListItem 
+                      key={contact.id} 
+                      chat={{
+                        id: contact.id,
+                        name: contact.name,
+                        unreadCount: 0,
+                        timestamp: 0
+                      }} 
+                      selected={selectedChat?.id === contact.id} 
+                      onSelect={selectChat} 
+                    />
+                  ))}
+                </>
+              )}
             </div>
           </aside>
 
-          <section
-            className={`wa-conversation ${
-              selectedChat ? 'wa-conversation--mobile-active' : 'wa-conversation--mobile-hidden'
-            }`}
-          >
+          <section className={`wa-conversation ${selectedChat ? 'wa-conversation--mobile-active' : 'wa-conversation--mobile-hidden'}`}>
             {selectedChat ? (
               <>
                 <header className="wa-chat-header">
                   <div className="wa-chat-header-main">
-                    <button
-                      type="button"
-                      className="wa-icon-button wa-back-button"
-                      onClick={handleBackToList}
-                      aria-label="Voltar"
-                    >
+                    <button type="button" className="wa-icon-button wa-back-button" onClick={handleBackToList} aria-label="Voltar">
                       <ArrowLeft size={18} />
                     </button>
-
-                    <div className="wa-avatar wa-avatar--photo">{getInitials(selectedChat.name)}</div>
-
+                    <div className="wa-avatar wa-avatar--photo">{selectedChat.name[0]}</div>
                     <div className="wa-chat-header-text">
                       <h2>{selectedChat.name}</h2>
                       <p>{selectedChat.id}</p>
                     </div>
                   </div>
-
                   <div className="wa-chat-actions">
-                    <button className="wa-icon-button" type="button" aria-label="Ligar">
-                      <Phone size={18} />
-                    </button>
-                    <button className="wa-icon-button" type="button" aria-label="Mais opções">
-                      <MoreVertical size={18} />
-                    </button>
+                    <button className="wa-icon-button" type="button" aria-label="Ligar"><Phone size={18} /></button>
+                    <button className="wa-icon-button" type="button" aria-label="Mais opções"><MoreVertical size={18} /></button>
                   </div>
                 </header>
 
-                <div ref={messageContainerRef} className="wa-message-area custom-scrollbar">
-                  {loadingMessages ? (
-                    <div className="wa-empty-state">
-                      <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#25d366]/20 border-t-[#128c7e]" />
-                      <p>Sincronizando histórico da conversa...</p>
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="wa-empty-state">
-                      <MessageSquare size={52} className="text-[#8696a0]" />
-                      <p>Nenhuma mensagem disponível nesta sessão</p>
-                    </div>
-                  ) : (
-                    messageItems.map((item, index) => {
-                      if (item.type === 'divider') {
-                        return (
-                          <div key={item.key} className="wa-date-divider">
-                            <span>{item.label}</span>
-                          </div>
-                        );
-                      }
+                <MessageArea 
+                    containerRef={messageContainerRef}
+                    messages={messages}
+                    loading={loadingMessages}
+                    onContextMenu={handleContextMenu}
+                    onScrollToMessage={scrollToMessage}
+                    messageItems={messageItems}
+                />
 
-                      const msg = item.message;
-                      let lines = [{ text: msg.body }];
-                      if (typeof window !== 'undefined') {
-                        try {
-                          lines = layoutMessage(msg.body, '14px Segoe UI', 420);
-                        } catch {}
-                      }
-
-                      const isMine =
-                        Boolean(msg.fromMe) ||
-                        msg.sender === 'me' ||
-                        msg.id.startsWith('true_');
-
-                      return (
-                        <div
-                          key={item.key}
-                          className={`wa-message-row ${isMine ? 'wa-message-row--mine' : 'wa-message-row--theirs'}`}
-                        >
-                          <div className={`wa-message-bubble ${isMine ? 'wa-message-bubble--mine' : 'wa-message-bubble--theirs'}`}>
-                            {renderMessageContent(msg, lines)}
-
-                            <div className="wa-message-meta">
-                              <span>{formatMessageDateTime(msg.timestamp)}</span>
-                              {isMine && <CheckCheck size={13} className="text-[#53bdeb]" />}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                <footer className="wa-inputbar">
-                  <button className="wa-icon-button" type="button" aria-label="Anexar">
-                    <Paperclip size={18} />
-                  </button>
-
-                  <input
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Digite uma mensagem"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={handleSendMessage}
-                    className="wa-send-button"
-                    aria-label="Enviar"
-                  >
-                    <Send size={18} />
-                  </button>
-                </footer>
+                <ChatInput 
+                    replyingTo={replyingTo}
+                    onSendMessage={(text) => {
+                        if (socket && selectedChat) {
+                            socket.emit('send-message', {
+                                to: selectedChat.id,
+                                body: text,
+                                quotedMsgId: replyingTo?.id
+                            });
+                            setReplyingTo(null);
+                        }
+                    }}
+                    onCancelReply={() => setReplyingTo(null)}
+                    onAttachFile={handleFileUpload}
+                    onShareContactClick={handleGetContacts}
+                />
               </>
             ) : (
               <div className="wa-blank-panel wa-blank-panel--desktop-only">
                 <div className="wa-blank-card">
                   <MessageSquare size={48} className="text-[#128c7e]" />
-                  <h3>Escolha uma conversa</h3>
-                  <p>
-                    A interface agora segue um layout inspirado no WhatsApp Web e no WhatsApp Business,
-                    com foco em leitura, separação visual das bolhas e adaptação para mobile.
-                  </p>
+                  <h3>OpenWPP Desktop</h3>
+                  <p>Envie e receba mensagens sem precisar manter seu celular conectado.</p>
                 </div>
               </div>
             )}
           </section>
         </section>
+      )}
+
+      {showContactPicker && (
+        <ContactPicker 
+          contacts={filteredContacts}
+          searchTerm={contactSearch}
+          onSearchChange={setContactSearch}
+          onSelect={handleShareContact}
+          onClose={() => setShowContactPicker(false)}
+        />
+      )}
+
+      {contextMenu && (
+        <ContextMenu 
+          x={contextMenu.x}
+          y={contextMenu.y}
+          message={contextMenu.message}
+          onClose={closeContextMenu}
+          onReply={handleReply}
+          onCopy={handleCopy}
+        />
       )}
     </main>
   );

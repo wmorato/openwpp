@@ -59,6 +59,9 @@ export function mapWhatsAppMessage(msg, requestedChatId = null) {
     mimetype: msg?.mimetype || null,
     filename: msg?.filename || null,
     hasMedia: Boolean(msg?.hasMedia || msg?.directPath),
+    quotedMsgId: msg?._data?.quotedStanzaID || msg?.quotedMsgId?._serialized || msg?.quotedMsg?._serialized || msg?._data?.quotedMsg?.id?._serialized || null,
+    quotedMsgBody: msg?._data?.quotedMsg?.body || msg?.quotedMsg?.body || msg?._data?.quotedMsgBody || null,
+    quotedMsgSender: serializeWid(msg?._data?.quotedMsg?.author) || serializeWid(msg?._data?.quotedMsg?.from) || serializeWid(msg?.quotedMsg?.author) || serializeWid(msg?.quotedMsg?.from) || null,
   };
 }
 
@@ -121,7 +124,11 @@ export async function fetchChatMessagesWithFallback({
     const fetched = await chat.fetchMessages({ limit });
     pushUnique(fetched, 'fetchMessages');
   } catch (error) {
-    logger.warn(`[CHAT-SYNC] ${chatId} fetchMessages falhou: ${error.message}`);
+    if (error.message.includes('waitForChatLoading')) {
+      logger.log(`[CHAT-SYNC] ${chatId} fetchMessages: aguardando carregamento do chat (fallback ativo)`);
+    } else {
+      logger.warn(`[CHAT-SYNC] ${chatId} fetchMessages falhou: ${error.message}`);
+    }
   }
 
   if (collected.length === 0) {
