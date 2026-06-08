@@ -12,30 +12,29 @@ import { SocketHandler } from './src/handlers/SocketHandler.mjs';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
-const port = 3000;
+const port = parseInt(process.env.PORT || '3000', 10);
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 const mediaDir = path.join(process.cwd(), '.media-cache');
-const dbPath = './openwpp.sqlite';
+
+let httpServer;
+let io;
+let dbService;
+let mediaService;
+let whatsappService;
+let syncService;
 
 app.prepare().then(async () => {
-  // 1. Inicia Serviços Core
-  const dbService = new DatabaseService(dbPath);
+  dbService = new DatabaseService();
   await dbService.init();
 
-  const mediaService = new MediaService(mediaDir);
-  
-  // 2. Inicia Serviço de WhatsApp
-  // Note: Dependency Injection de db e media
-  const whatsappService = new WhatsAppService(dbService, mediaService);
+  mediaService = new MediaService(mediaDir);
+  whatsappService = new WhatsAppService(dbService, mediaService);
+  syncService = new SyncService(null, dbService, whatsappService);
 
-  // 3. Inicia Serviço de Sincronismo
-  const syncService = new SyncService(null, dbService, whatsappService); 
-
-  // 4. Cria o Servidor HTTP e Handlers
-  const httpServer = createServer((req, res) => {
+  httpServer = createServer((req, res) => {
     const httpHandler = new HttpHandler(handle, dbService, whatsappService, mediaDir);
     httpHandler.handleRequest(req, res).catch(err => {
       console.error('--- HTTP REQUEST ERROR ---', err);
@@ -46,31 +45,25 @@ app.prepare().then(async () => {
     });
   });
 
-  const io = new Server(httpServer);
-  
-  // 5. Injeta o IO nos serviços (Inversão de Controle ou via Propriedade)
-  syncService.io = io; 
-  
-  // 6. Handlers de Eventos de Rede
+  io = new Server(httpServer);
+  syncService.io = io;
+
   new SocketHandler(io, whatsappService, dbService, syncService);
 
-  // 7. Lógica de Inicialização pós-WhatsApp Ready
+  const SYNC_CHATS = parseInt(process.env.SYNC_CHATS || '200', 10);
+
   whatsappService.setOnReady(() => {
-    // Roda em segundo plano sem travar a inicialização do sistema
     console.log('--- INICIANDO PROCESSAMENTO DE BACKFILL E SYNC EM SEGUNDO PLANO ---');
-    
-    // Backfill de mídia (não bloqueante)
     syncService.backfillMedia().catch(e => console.error('Erro no backfillMedia:', e));
-    
-    // Sincronismo inicial de chats (não bloqueante)
     whatsappService.getChatsCached().then(chats => {
-        console.log(`--- ${chats.length} CHATS ENCONTRADOS. INICIANDO PROCESSAMENTO... ---`);
-        syncService.addToQueue(chats.slice(0, 40));
+        console.log(`--- ${chats.length} CHATS ENCONTRADOS. INICIANDO PROCESSAMENTO (max ${SYNC_CHATS})... ---`);
+        const sorted = chats.sort((a, b) => (b.unreadCount || 0) - (a.unreadCount || 0));
+        syncService.addToQueue(sorted.slice(0, SYNC_CHATS));
         syncService.processQueue();
+        syncService.syncAllContacts();
     }).catch(e => console.error('Erro ao buscar chats iniciais:', e));
   });
 
-  // 8. Start Client
   whatsappService.initialize();
 
   httpServer.listen(port, hostname, () => {
@@ -81,3 +74,34 @@ app.prepare().then(async () => {
   console.error('--- FATAL SERVER ERROR UNCAUGHT ---', err);
   process.exit(1);
 });
+
+// Graceful Shutdown
+function shutdown(signal) {
+  console.log(`\n--- ${signal} RECEIVED. Shutting down gracefully... ---`);
+  if (whatsappService) {
+    try { whatsappService.destroy(); } catch (e) { console.error('Error destroying WhatsApp:', e); }
+  }
+  if (io) {
+    try { io.close(); } catch (e) { console.error('Error closing Socket.io:', e); }
+  }
+  if (httpServer) {
+    httpServer.close(() => {
+      console.log('--- HTTP server closed ---');
+      if (dbService) {
+        dbService.prisma.$disconnect().then(() => {
+          console.log('--- Database disconnected ---');
+          process.exit(0);
+        }).catch(() => process.exit(1));
+      } else {
+        process.exit(0);
+      }
+    });
+  } else {
+    process.exit(0);
+  }
+  // Force exit after 10s
+  setTimeout(() => process.exit(1), 10000);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

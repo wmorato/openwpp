@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenWPP — Multi-Workspace Central de Atendimento
 
-## Getting Started
+> Plataforma de atendimento multi-canal com suporte a WhatsApp, agentes, automações e IA.
 
-First, run the development server:
+**URL**: [https://chat.moratosolucoes.com.br](https://chat.moratosolucoes.com.br)
+
+---
+
+## Credenciais de Acesso
+
+| Email | Senha | Perfil |
+|---|---|---|
+| `wil_mor_s@hotmail.com` | `Morato@2026` | Admin |
+| `wilsonmorato@gmail.com` | `Morato@2026` | Dev |
+
+---
+
+## Stack
+
+| Camada | Tecnologia |
+|---|---|
+| **Runtime** | Node.js v22.22.3 |
+| **Framework** | Next.js 16 (Turbopack) |
+| **ORM** | Prisma v5.22.0 |
+| **Banco** | PostgreSQL 16 (Docker, porta 5433) |
+| **Auth** | JWT + bcrypt + refresh tokens |
+| **WhatsApp** | whatsapp-web.js + Puppeteer/Chrome |
+| **Frontend** | React 19 + Tailwind CSS v4 |
+| **Proxy** | Nginx + SSL (Let's Encrypt) |
+
+---
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev     # Desenvolvimento
+npm run build   # Build production
+npm run seed    # Seed admin users
+npm start       # Produção
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Infraestrutura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Serviço**: `ms-openwpp` (systemd, auto-start)
+- **Logs**: `journalctl -u ms-openwpp.service -f`
+- **Secrets**: `/var/www/secrets/ms-openwpp.env`
+- **PostgreSQL**: container `ms-openwpp-pg` (porta 5433)
+- **WhatsApp auth**: `/var/www/.wwebjs_auth_openwpp/`
+- **Monitoramento**: ms-monitor (container `ms-openwpp-pg`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Roadmap
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [x] PostgreSQL + Schema 18 models
+- [x] Auth JWT (login, register, refresh, logout)
+- [x] Login page + Dashboard protegido
+- [x] WhatsApp Web integration
+- [x] Produção (systemd, Nginx, SSL, monitor)
+- [ ] Multi-WhatsApp (N contas por workspace)
+- [ ] Multi-agente (fila, atribuição round-robin)
+- [ ] API REST pública + Webhooks
+- [ ] Canais Telegram + Email
+- [ ] Automações + CSAT + SLA
+- [ ] IA + Base de conhecimento

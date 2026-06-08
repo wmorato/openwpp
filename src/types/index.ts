@@ -4,6 +4,7 @@ export interface Chat {
   unreadCount: number;
   timestamp: number;
   isGroup?: boolean;
+  pinned?: boolean;
   lastMessage?: {
     body: string;
     timestamp: number;
@@ -12,6 +13,7 @@ export interface Chat {
 
 export interface Message {
   id: string;
+  chatId?: string;
   from: string;
   to?: string;
   fromMe?: boolean | number;
@@ -30,4 +32,5 @@ export interface Message {
 export interface Contact {
   id: string;
   name: string;
+  isSaved?: boolean;
 }

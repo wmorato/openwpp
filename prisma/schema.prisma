@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?
+  plan      String   @default("free")
+  configs   Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  channels      Channel[]
+  conversations Conversation[]
+  inboxes       Inbox[]
+  messages      Message[]
+  contacts      Contact[]
+  chats         Chat[]
+  agents         Agent[]
+  teams          Team[]
+  apiKeys        ApiKey[]
+  articles       Article[]
+  categories     Category[]
+  automationRules AutomationRule[]
+  auditLogs      AuditLog[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("agent")
+  avatar       String?
+  workspaceId  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  sessions  Session[]
+  agent     Agent?
+  auditLogs AuditLog[]
+
+  @@index([workspaceId])
+  @@index([email])
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@index([refreshToken])
+  @@map("sessions")
+}
+
+model Channel {
+  id          String   @id @default(uuid())
+  provider    String   @default("whatsapp")
+  name        String?
+  token       String?
+  webhookUrl  String?
+  status      String   @default("disconnected")
+  configs     Json     @default("{}")
+  workspaceId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
+  conversations Conversation[]
+
+  @@index([workspaceId])
+  @@index([provider])
+  @@map("channels")
+}
+
+model Inbox {
+  id          String   @id @default(uuid())
+  name        String
+  channelType String   @default("whatsapp")
+  workspaceId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@map("inboxes")
+}
+
+model Conversation {
+  id          String   @id @default(uuid())
+  status      String   @default("open")
+  priority    String   @default("normal")
+  channelId   String?
+  assigneeId  String?
+  inboxId     String?
+  workspaceId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  channel   Channel?  @relation(fields: [channelId], references: [id])
+  agent     Agent?    @relation(fields: [assigneeId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([assigneeId])
+  @@index([channelId])
+  @@map("conversations")
+}
+
+model Message {
+  id              String   @id
+  chatId          String
+  workspaceId     String?
+  sender          String
+  body            String?
+  timestamp       Int
+  fromMe          Int
+  contentType     String?  @default("text")
+  mediaMimeType   String?
+  mediaFilename   String?
+  mediaUrl        String?
+  quotedMsgId     String?
+  quotedMsgBody   String?
+  quotedMsgSender String?
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([chatId])
+  @@index([timestamp])
+  @@index([workspaceId])
+  @@map("messages")
+}
+
+model Contact {
+  id          String   @id
+  name        String?
+  pushname    String?
+  number      String?
+  photoUrl    String?
+  isGroup     Boolean  @default(false)
+  workspaceId String?
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([name])
+  @@index([workspaceId])
+  @@map("contacts")
+}
+
+model Chat {
+  id            String   @id
+  name          String?
+  timestamp     Int      @default(0)
+  unreadCount   Int      @default(0)
+  lastMessageId String?
+  workspaceId   String?
+  updatedAt     DateTime @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@map("chats")
+}
+
+model Agent {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  workspaceId String
+  status      String   @default("online")
+  skills      Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id])
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
+  conversations Conversation[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([status])
+  @@map("agents")
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  workspaceId String
+  agentIds    Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@map("teams")
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  workspaceId String
+  active      Boolean  @default(true)
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([key])
+  @@map("api_keys")
+}
+
+model Article {
+  id          String   @id @default(uuid())
+  workspaceId String
+  title       String
+  content     String
+  categoryId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  category  Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([workspaceId])
+  @@index([categoryId])
+  @@map("articles")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  articles  Article[]
+
+  @@index([workspaceId])
+  @@map("categories")
+}
+
+model AutomationRule {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String
+  trigger     String
+  conditions  Json     @default("{}")
+  actions     Json     @default("[]")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@map("automation_rules")
+}
+
+model CsatSurvey {
+  id             String   @id @default(uuid())
+  conversationId String   @unique
+  rating         Int?
+  comment        String?
+  sentAt         DateTime?
+  respondedAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  @@map("csat_surveys")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  workspaceId String?
+  userId      String?
+  action      String
+  data        Json     @default("{}")
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  user      User?      @relation(fields: [userId], references: [id])
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

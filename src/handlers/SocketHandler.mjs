@@ -1,5 +1,12 @@
 import { fetchChatMessagesWithFallback } from '../lib/history-sync.mjs';
 
+const SYNC_DAYS = parseInt(process.env.SYNC_DAYS || '30', 10);
+const CACHE_TTL_MS = 30000;
+
+function getSyncCutoff() {
+  return Math.floor(Date.now() / 1000) - (SYNC_DAYS * 86400);
+}
+
 export class SocketHandler {
   constructor(io, whatsappService, dbService, syncService) {
     this.io = io;
@@ -7,8 +14,19 @@ export class SocketHandler {
     this.dbService = dbService;
     this.syncService = syncService;
     this.socketInterests = new Map(); // socket.id -> chatId
+    this.syncedChats = new Map(); // chatId -> timestamp
 
     this.setupListeners();
+  }
+
+  wasRecentlySynced(chatId) {
+    const lastSync = this.syncedChats.get(chatId);
+    if (!lastSync) return false;
+    return Date.now() - lastSync < CACHE_TTL_MS;
+  }
+
+  markSynced(chatId) {
+    this.syncedChats.set(chatId, Date.now());
   }
 
   setupListeners() {
@@ -81,14 +99,16 @@ export class SocketHandler {
         messages: localMsgs.map(m => ({ ...m, fromMe: !!m.fromMe })) 
       });
 
-      // 2. Sync live
-      if (this.whatsappService.isReady) {
+      // 2. Sync live (apenas se não foi sincronizado recentemente)
+      const recentlySynced = this.wasRecentlySynced(chatId);
+      if (this.whatsappService.isReady && !recentlySynced) {
         try {
           const chat = await this.whatsappService.client.getChatById(chatId);
-          await this.whatsappService.client.interface.openChatWindow(chatId).catch((openErr) => {
-            console.log(`[LIVE-SYNC] ${chatId} openChatWindow falhou: ${openErr.message}`);
-          });
-          await new Promise(r => setTimeout(r, 2000));
+
+          if (chatId.endsWith('@c.us') || chatId.endsWith('@g.us')) {
+            await this.whatsappService.client.interface.openChatWindow(chatId).catch(() => {});
+            await new Promise(r => setTimeout(r, 2000));
+          }
 
           const wppMsgs = await fetchChatMessagesWithFallback({ 
             client: this.whatsappService.client, 
@@ -97,8 +117,11 @@ export class SocketHandler {
             limit: 100 
           });
 
+          const cutoff = getSyncCutoff();
           for (const m of wppMsgs) {
-            await this.whatsappService.saveMessage(m, false, chatId);
+            if (!m.timestamp || m.timestamp >= cutoff) {
+              await this.whatsappService.saveMessage(m, false, chatId);
+            }
           }
           
           // Refresh após sync live
@@ -107,6 +130,8 @@ export class SocketHandler {
             chatId, 
             messages: updatedMsgs.map(m => ({ ...m, fromMe: !!m.fromMe })) 
           });
+
+          this.markSynced(chatId);
         } catch (syncErr) {
           console.log(`[LIVE-SYNC-ERR] ${chatId}: ${syncErr.message}`);
         }
@@ -125,11 +150,11 @@ export class SocketHandler {
         const filtered = chats
           .filter(c => !c.archived && c.id._serialized !== 'status@broadcast')
           .sort((a, b) => {
-            // Prioridade 1: Mensagens não lidas
-            if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
-            if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
-            
-            // Prioridade 2: Timestamp (mais recente primeiro)
+            // Prioridade 0: Pinned
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+
+            // Prioridade 1: Timestamp (mais recente primeiro)
             return (b.timestamp || 0) - (a.timestamp || 0);
           })
           .slice(0, 100);
@@ -139,7 +164,8 @@ export class SocketHandler {
           name: c.name || c.id.user, 
           unreadCount: c.unreadCount, 
           timestamp: c.timestamp,
-          isGroup: c.isGroup 
+          isGroup: c.isGroup,
+          pinned: !!c.pinned
         })));
       } catch (e) { 
         console.log('Erro ao pegar chats'); 
@@ -200,38 +226,55 @@ export class SocketHandler {
       try {
         const q = query.toLowerCase();
         
-        // 1. Buscar nos Contatos
-        const contacts = await this.whatsappService.getContacts();
-        const contactResults = contacts
-          .filter(c => c && c.id && (
-            (c.name || '').toLowerCase().includes(q) || 
-            (c.pushname || '').toLowerCase().includes(q)
-          ))
-          .slice(0, 30)
-          .map(c => ({
-            id: c.id._serialized,
-            name: c.name || c.pushname || c.id.user,
-            type: 'contact'
-          }));
+        // 1. Buscar no Banco Local (Prisma) - Rápido e persistente
+        const localContacts = await this.dbService.searchContactsLocal(query);
+        const contactResults = localContacts.map(c => ({
+          id: c.id,
+          name: c.name || c.pushname || c.id.split('@')[0],
+          type: 'contact',
+          isSaved: true
+        }));
         
-        // 2. Buscar nas Mensagens (Filtro por nome do chat embutido no client.searchMessages)
-        // Isso encontra mensagens QUE CONTÉM a palavra, ou de chats QUE CONTÉM o nome
-        const messages = await this.whatsappService.client.searchMessages(query, { limit: 20 });
-        const messageChatResults = await Promise.all(
-          Array.from(new Set(messages.map(m => m.chatId))).map(async (cid) => {
-            try {
-              const chat = await this.whatsappService.client.getChatById(cid);
-              return {
-                id: chat.id._serialized,
-                name: chat.name || chat.id.user,
+        // 2. Buscar em todos os chats cacheados (Inclui Grupos)
+        const allChats = await this.whatsappService.getChatsCached();
+        const chatMatches = allChats
+            .filter(c => (c.name || '').toLowerCase().includes(q) && c.id._serialized !== 'status@broadcast')
+            .map(c => ({
+                id: c.id._serialized,
+                name: c.name || c.id.user,
                 type: 'chat'
-              };
-            } catch { return null; }
-          })
-        );
+            }));
+
+        // 3. Buscar nas Mensagens (Filtro por nome do chat embutido no client.searchMessages)
+        // Isso encontra mensagens QUE CONTÉM a palavra, ou de chats QUE CONTÉM o nome
+        let messageChatResults = [];
+        try {
+          const messages = await this.whatsappService.client.searchMessages(query, { limit: 20 });
+          messageChatResults = await Promise.all(
+            Array.from(new Set(messages.map(m => m.chatId))).map(async (cid) => {
+              try {
+                const chat = await this.whatsappService.client.getChatById(cid);
+                return {
+                  id: chat.id._serialized,
+                  name: chat.name || chat.id.user,
+                  type: 'chat'
+                };
+              } catch { return null; }
+            })
+          );
+        } catch (errSearch) {
+          console.warn('Busca nas mensagens falhou ou retornou erro, ignorando...', errSearch.message);
+        }
 
         // Combinar e remover duplicatas por ID
         const combined = [...contactResults];
+        
+        chatMatches.forEach(chat => {
+          if (chat && !combined.find(c => c.id === chat.id)) {
+            combined.push(chat);
+          }
+        });
+
         messageChatResults.forEach(chat => {
           if (chat && !combined.find(c => c.id === chat.id)) {
             combined.push(chat);

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { 
   Reply, Copy, Forward, Pin, Star, ThumbsUp, Heart, 
-  Laugh, Surprise, Trash2, AlertTriangle, SmilePlus, X 
+  Laugh, Frown, Trash2, AlertTriangle, SmilePlus, X 
 } from 'lucide-react';
 import { Message } from '@/types';
 
@@ -43,54 +43,54 @@ export const ContextMenu = ({ x, y, message, onClose, onReply, onCopy }: Context
   return (
     <div 
         ref={menuRef}
-        className="fixed z-[100] w-56 bg-white/95 backdrop-blur-xl border border-gray-200 shadow-2xl rounded-2xl py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+        className="wa-context-menu"
         style={{ left: adjustedX, top: adjustedY }}
     >
-        <div className="px-3 pb-2 pt-1 border-b border-gray-100 flex justify-between items-center mb-1">
-            <div className="flex gap-2">
-                <button className="hover:scale-125 transition-transform text-lg" title="Gostei">👍</button>
-                <button className="hover:scale-125 transition-transform text-lg" title="Amei">❤️</button>
-                <button className="hover:scale-125 transition-transform text-lg" title="Engraçado">😂</button>
-                <button className="hover:scale-125 transition-transform text-lg" title="Uau">😮</button>
+        <div className="wa-context-header">
+            <div className="wa-context-reactions">
+                <button title="Gostei">👍</button>
+                <button title="Amei">❤️</button>
+                <button title="Engraçado">😂</button>
+                <button title="Uau">😮</button>
             </div>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg text-gray-400"><X size={14}/></button>
+            <button onClick={onClose} className="wa-context-close"><X size={14}/></button>
         </div>
 
-        <div className="px-1.5 space-y-0.5">
+        <div className="wa-context-items">
             <button 
-                onClick={() => onReply(message)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-700"
+                onClick={() => { onReply(message); onClose(); }}
+                className="wa-context-btn"
             >
-                <Reply size={18} className="text-blue-500" />
-                <span className="text-sm font-medium">Responder</span>
+                <Reply size={18} className="text-[#00a884]" />
+                <span>Responder</span>
             </button>
             <button 
-                onClick={() => onCopy(message.body)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-700"
+                onClick={() => { onCopy(message.body); onClose(); }}
+                className="wa-context-btn"
             >
-                <Copy size={18} className="text-green-500" />
-                <span className="text-sm font-medium">Copiar</span>
+                <Copy size={18} className="text-[#00a884]" />
+                <span>Copiar</span>
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-700 opacity-50 cursor-not-allowed">
-                <Forward size={18} className="text-orange-500" />
-                <span className="text-sm font-medium">Encaminhar</span>
+            <button className="wa-context-btn disabled">
+                <Forward size={18} className="text-[#8696a0]" />
+                <span>Encaminhar</span>
             </button>
-            <div className="h-px bg-gray-100 mx-3 my-1" />
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-700 opacity-50 cursor-not-allowed">
-                <Pin size={18} />
-                <span className="text-sm font-medium">Fixar</span>
+            <div className="wa-context-divider" />
+            <button className="wa-context-btn disabled">
+                <Pin size={18} className="text-[#8696a0]" />
+                <span>Fixar</span>
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-700 opacity-50 cursor-not-allowed">
-                <Star size={18} />
-                <span className="text-sm font-medium">Favoritar</span>
+            <button className="wa-context-btn disabled">
+                <Star size={18} className="text-[#8696a0]" />
+                <span>Favoritar</span>
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-700 opacity-50 cursor-not-allowed">
-                <AlertTriangle size={18} />
-                <span className="text-sm font-medium">Denunciar</span>
+            <button className="wa-context-btn disabled">
+                <AlertTriangle size={18} className="text-[#8696a0]" />
+                <span>Denunciar</span>
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-100 rounded-xl transition-colors text-red-500 opacity-50 cursor-not-allowed">
-                <Trash2 size={18} />
-                <span className="text-sm font-medium">Apagar</span>
+            <button className="wa-context-btn disabled">
+                <Trash2 size={18} className="text-[#ea0038]" />
+                <span>Apagar</span>
             </button>
         </div>
     </div>

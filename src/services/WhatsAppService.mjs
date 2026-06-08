@@ -57,6 +57,24 @@ export class WhatsAppService extends EventEmitter {
   }
 
   async saveMessage(msg, isLive = false, requestedChatId = null) {
+    const hasQuoted = msg.hasQuotedMsg || msg._data?.quotedStanzaID || msg.quotedMsgId;
+    if (hasQuoted && !msg._data?.quotedMsg?.body && !msg._data?.quotedMsgBody && !msg.quotedMsg?.body) {
+      try {
+        const quotedMsg = await msg.getQuotedMessage();
+        if (quotedMsg) {
+          msg._data = msg._data || {};
+          msg._data.quotedMsg = msg._data.quotedMsg || {};
+          msg._data.quotedMsg.body = quotedMsg.body || quotedMsg.caption || '';
+          msg._data.quotedMsg.author = quotedMsg.author || quotedMsg.from;
+          if (!msg._data.quotedStanzaID) {
+            msg._data.quotedStanzaID = quotedMsg.id?._serialized || quotedMsg.id?.id;
+          }
+        }
+      } catch (err) {
+        // Ignorar se não puder buscar
+      }
+    }
+
     const msgData = mapWhatsAppMessage(msg, requestedChatId);
     const mediaPayload = await this.mediaService.resolveMediaPayload(this.client, msg, msgData);
     const mediaData = mediaPayload
@@ -72,13 +90,11 @@ export class WhatsAppService extends EventEmitter {
     try {
       const result = await this.dbService.saveMessage(msgData, mediaData, normalizedBody);
 
-      if (result.changes > 0) {
+      if (result) {
         const fullMessage = {
           ...msgData,
           ...mediaData,
           body: normalizedBody,
-          from: msg.from,
-          to: msg.to,
         };
         this.emit('message-saved', { message: fullMessage, isLive });
       }
@@ -152,5 +168,13 @@ export class WhatsAppService extends EventEmitter {
 
   setOnReady(callback) {
     this.onReadyCallback = callback;
+  }
+
+  destroy() {
+    if (this.client) {
+      try { this.client.destroy(); } catch (e) { console.error('Error destroying client:', e); }
+    }
+    this.removeAllListeners();
+    this.isReady = false;
   }
 }

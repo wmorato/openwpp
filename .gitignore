@@ -49,3 +49,10 @@ next-env.d.ts
 .media-cache/
 .wwebjs_auth/
 .next/
+
+/src/generated/prisma
+
+# Infrastructure
+/data/
+/docker/
+/testes/

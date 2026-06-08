@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Pin } from 'lucide-react';
 import { Chat } from '@/types';
 import { getInitials, formatChatListTime } from '@/lib/frontend-utils';
 
@@ -23,9 +24,12 @@ export const ChatListItem = ({ chat, selected, onSelect }: ChatListItemProps) =>
           <h3>{chat.name}</h3>
           <span>{formatChatListTime(chat.timestamp)}</span>
         </div>
-        <div className="wa-chat-meta-row">
+        <div className="wa-chat-meta-row" style={{ alignItems: 'center' }}>
           <p>{chat.unreadCount > 0 ? `${chat.unreadCount} novas mensagens` : 'Toque para abrir a conversa'}</p>
-          {chat.unreadCount > 0 && <strong>{chat.unreadCount}</strong>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {chat.pinned && <Pin size={14} className="text-[#8696a0]" style={{ transform: 'rotate(45deg)' }} />}
+            {chat.unreadCount > 0 && <strong>{chat.unreadCount}</strong>}
+          </div>
         </div>
       </div>
     </button>

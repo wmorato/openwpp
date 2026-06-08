@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --background: #0b141a;
@@ -241,23 +241,13 @@ body {
 
 .wa-chatlist-item {
   width: 100%;
-  border: none;
-  background: transparent;
-  outline: none;
-  cursor: pointer;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  padding: 10px 14px;
+  padding: 14px 16px;
   text-align: left;
   border-bottom: 1px solid #eef1f3;
   transition: background-color 0.2s ease;
-}
-
-.wa-chatlist-item .wa-avatar {
-  width: 44px;
-  height: 44px;
-  font-size: 14px;
 }
 
 .wa-chatlist-item:hover {
@@ -283,7 +273,7 @@ body {
 
 .wa-chat-meta-row h3 {
   color: #111b21;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -293,7 +283,7 @@ body {
 .wa-chat-meta-row span,
 .wa-chat-meta-row p {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13px;
   flex-shrink: 0;
 }
 
@@ -386,11 +376,6 @@ body {
   border-radius: 9px;
   padding: 8px 10px 6px;
   box-shadow: 0 1px 0 rgba(17, 27, 33, 0.08), 0 1px 3px rgba(17, 27, 33, 0.12);
-  transition: background-color 0.4s ease;
-}
-
-.wa-message-row--highlight .wa-message-bubble {
-  background-color: rgba(37, 211, 102, 0.35) !important;
 }
 
 .wa-message-bubble--mine {
@@ -459,7 +444,6 @@ body {
   padding: 10px 16px;
   background: #f0f2f5;
   border-top: 1px solid var(--panel-line);
-  position: relative;
 }
 
 .wa-textarea {
@@ -669,264 +653,6 @@ body {
     padding: 10px 12px;
   }
 }
-
-/* Fallback Pure CSS implementations for Tailwind dependent components */
-
-/* Context Menu */
-.wa-context-menu {
-  position: absolute;
-  z-index: 100;
-  width: 224px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
-  border-radius: 12px;
-  padding: 6px 0;
-  animation: context-menu-fade-in 0.15s ease-out forwards;
-}
-
-@keyframes context-menu-fade-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.wa-context-header {
-  padding: 6px 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.wa-context-reactions {
-  display: flex;
-  gap: 8px;
-}
-.wa-context-reactions button {
-  font-size: 18px;
-  transition: transform 0.2s;
-  cursor: pointer;
-}
-.wa-context-reactions button:hover {
-  transform: scale(1.25);
-}
-
-.wa-context-close {
-  padding: 4px;
-  border-radius: 6px;
-  color: #8696a0;
-  display: flex;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  outline: none;
-}
-.wa-context-close:hover {
-  background: #f0f2f5;
-}
-
-.wa-context-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  color: #111b21;
-  font-size: 14px;
-  background: transparent;
-  cursor: pointer;
-  border: none;
-  outline: none;
-}
-.wa-context-btn:hover {
-  background: #f0f2f5;
-}
-.wa-context-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Chat Input Popups (Reply, Emoji, Attachments) */
-.wa-reply-box {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
-  margin-bottom: 8px;
-  padding: 0 16px;
-  animation: context-menu-fade-in 0.2s ease-out;
-  z-index: 20;
-}
-
-.wa-reply-content {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
-  padding: 10px 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.wa-reply-bar {
-  width: 4px;
-  align-self: stretch;
-  background: var(--accent);
-  border-radius: 4px;
-}
-
-.wa-reply-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.wa-reply-text h4 {
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0 0 2px 0;
-}
-
-.wa-reply-text p {
-  color: #54656f;
-  font-size: 13px;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.wa-popup-menu {
-  position: absolute;
-  bottom: 60px;
-  left: 16px;
-  z-index: 30;
-  background: #ffffff;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 16px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: context-menu-fade-in 0.15s ease-out;
-}
-
-.wa-popup-menu--emoji {
-  width: 320px;
-  height: 380px;
-}
-
-.wa-popup-menu--attach {
-  width: 200px;
-  padding: 8px 0;
-}
-
-.wa-popup-header {
-  padding: 12px 16px;
-  background: #f0f2f5;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.wa-popup-header span {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111b21;
-}
-
-.wa-emoji-grid {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-.wa-emoji-btn {
-  font-size: 24px;
-  padding: 6px;
-  border-radius: 8px;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  outline: none;
-}
-.wa-emoji-btn:hover {
-  background: #f0f2f5;
-}
-
-.wa-attach-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
-  color: #111b21;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  outline: none;
-}
-.wa-attach-btn:hover {
-  background: #f5f6f6;
-}
-
-.wa-reply-close {
-  padding: 4px;
-  border-radius: 6px;
-  color: #8696a0;
-  display: flex;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  outline: none;
-}
-
-.wa-reply-close:hover {
-  background: #f0f2f5;
-}
-
-/* Quoted Message in Chat Bubble */
-.wa-quoted-message {
-  margin-bottom: 8px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  border-left: 4px solid var(--accent);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.wa-quoted-message:hover {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.wa-quoted-title {
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
-}
-
-.wa-quoted-text {
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
-}
-
 
 .wa-message-row--highlight {
   animation: highlight-fade 2s ease-out forwards;

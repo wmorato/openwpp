@@ -71,16 +71,14 @@ export const ChatInput = memo(({
     return (
         <footer className="wa-inputbar relative">
             {replyingTo && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 px-4 animate-in slide-in-from-bottom-2 duration-200">
-                    <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-gray-100 flex gap-3 items-center group">
-                        <div className="w-1 self-stretch bg-[#128c7e] rounded-full" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[#128c7e] text-xs font-bold mb-0.5">
-                                {replyingTo.fromMe ? 'Você' : (replyingTo.sender || 'Contato')}
-                            </p>
-                            <p className="text-gray-500 text-sm truncate">{replyingTo.body}</p>
+                <div className="wa-reply-box">
+                    <div className="wa-reply-content">
+                        <div className="wa-reply-bar" />
+                        <div className="wa-reply-text">
+                            <h4>{replyingTo.fromMe ? 'Você' : (replyingTo.sender || 'Contato')}</h4>
+                            <p>{replyingTo.body}</p>
                         </div>
-                        <button onClick={onCancelReply} className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                        <button onClick={onCancelReply} className="wa-reply-close">
                             <X size={18} />
                         </button>
                     </div>
@@ -88,36 +86,29 @@ export const ChatInput = memo(({
             )}
 
             {showEmojiPicker && (
-                <div ref={emojiPickerRef} className="absolute bottom-16 left-4 z-20 w-72 h-80 bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border border-gray-200">
-                    <div className="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                        <span className="font-semibold text-sm">Emojis</span>
-                        <button onClick={() => setShowEmojiPicker(false)} className="hover:bg-gray-200 p-1 rounded-lg"><X size={16}/></button>
+                <div ref={emojiPickerRef} className="wa-popup-menu wa-popup-menu--emoji">
+                    <div className="wa-popup-header">
+                        <span>Emojis</span>
+                        <button onClick={() => setShowEmojiPicker(false)} className="wa-reply-close"><X size={16}/></button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-2 grid grid-cols-7 gap-1 custom-scrollbar">
+                    <div className="wa-emoji-grid custom-scrollbar">
                         {EMOJIS.map((e, idx) => (
-                            <button key={`${e}-${idx}`} onClick={() => addEmoji(e)} className="text-xl hover:bg-gray-100 p-1 rounded-lg">{e}</button>
+                            <button key={`${e}-${idx}`} onClick={() => addEmoji(e)} className="wa-emoji-btn">{e}</button>
                         ))}
                     </div>
                 </div>
             )}
 
             {showAttachmentMenu && (
-                <div ref={attachmentMenuRef} className="absolute bottom-16 left-4 z-20 w-48 bg-white shadow-2xl rounded-2xl overflow-hidden py-2 border border-gray-200">
-                    <div className="px-4 py-2 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Anexar</span>
-                    </div>
-                    <button onClick={() => { fileInputRef.current?.click(); setShowAttachmentMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors">
-                        <ImageIcon size={18} className="text-blue-500" />
-                        <span className="text-sm font-medium">Fotos e vídeos</span>
-                    </button>
-                    <button onClick={() => { setShowAttachmentMenu(false); onShareContactClick(); }} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors">
-                        <User size={18} className="text-orange-500" />
-                        <span className="text-sm font-medium">Contato</span>
+                <div ref={attachmentMenuRef} className="wa-popup-menu wa-popup-menu--attach">
+                    <button onClick={() => { fileInputRef.current?.click(); setShowAttachmentMenu(false); }} className="wa-attach-btn">
+                        <ImageIcon size={18} className="text-[#005c4b]" />
+                        <span>Fotos e vídeos</span>
                     </button>
                 </div>
             )}
 
-            <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => { 
+            <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => { 
                 const file = e.target.files?.[0];
                 if (file) { onAttachFile(file); e.target.value = ''; }
             }} />

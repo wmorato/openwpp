@@ -41,12 +41,12 @@ export const MessageBubble = memo(({
         {msg.quotedMsgId && (
           <div 
             onClick={() => onScrollToMessage(msg.quotedMsgId!)}
-            className="mb-2 p-2 bg-black/5 rounded-lg border-l-4 border-[#128c7e] text-xs cursor-pointer hover:bg-black/10 transition-colors"
+            className="wa-quoted-message"
           >
-            <p className="font-bold text-[#128c7e] mb-0.5 truncate">
+            <p className="wa-quoted-title">
               {msg.quotedMsgSender === 'me' ? 'Você' : (msg.quotedMsgSender || 'Contato')}
             </p>
-            <p className="text-gray-500 truncate">{msg.quotedMsgBody}</p>
+            <p className="wa-quoted-text">{msg.quotedMsgBody}</p>
           </div>
         )}
         

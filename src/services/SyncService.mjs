@@ -1,5 +1,9 @@
 import { fetchChatMessagesWithFallback } from '../lib/history-sync.mjs';
 
+const SYNC_DAYS = parseInt(process.env.SYNC_DAYS || '30', 10);
+const SYNC_LIMIT = parseInt(process.env.SYNC_LIMIT || '100', 10);
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
 export class SyncService {
   constructor(io, dbService, whatsappService) {
     this.io = io;
@@ -11,6 +15,15 @@ export class SyncService {
 
   addToQueue(chats) {
     chats.forEach(c => this.syncQueue.add(c));
+  }
+
+  getSyncCutoff() {
+    return Math.floor(Date.now() / 1000) - (SYNC_DAYS * SECONDS_PER_DAY);
+  }
+
+  shouldSyncMessage(msg) {
+    if (!msg.timestamp) return true;
+    return msg.timestamp >= this.getSyncCutoff();
   }
 
   async processQueue() {
@@ -37,6 +50,25 @@ export class SyncService {
 
       while (retries > 0 && !success) {
         try {
+          // Salvar Chat e Contato logo no início do sync do chat
+          const contact = await chat.getContact();
+          await this.dbService.saveContact({
+            id: contact.id._serialized,
+            name: contact.name || contact.pushname,
+            pushname: contact.pushname,
+            number: contact.number,
+            photoUrl: await contact.getProfilePicUrl().catch(() => null),
+            isGroup: chat.isGroup
+          });
+
+          await this.dbService.saveChat({
+            id: chat.id._serialized,
+            name: chat.name,
+            timestamp: chat.timestamp,
+            unreadCount: chat.unreadCount,
+            lastMessageId: chat.lastMessage?.id?._serialized
+          });
+
           await this.whatsappService.client.interface.openChatWindow(chatId).catch(() => {});
           await new Promise(r => setTimeout(r, 4000));
 
@@ -44,15 +76,19 @@ export class SyncService {
             client: this.whatsappService.client, 
             chat, 
             chatId, 
-            limit: 100 
+            limit: SYNC_LIMIT 
           });
 
+          let savedCount = 0;
           for (const m of msgs) {
+            if (!this.shouldSyncMessage(m)) continue;
             await this.whatsappService.saveMessage(m, false, chatId);
+            savedCount++;
           }
           
           const hasHistory = msgs.some(m => m.timestamp < ONE_DAY_AGO);
-          console.log(`[SYNC-DONE] ${chatId} (${msgs.length} msgs). Histórico antigo: ${hasHistory ? 'SIM ✅' : 'NÃO'}`);
+          const cutoffDate = new Date(this.getSyncCutoff() * 1000).toISOString().split('T')[0];
+          console.log(`[SYNC-DONE] ${chatId} (${savedCount}/${msgs.length} msgs salvas, período: últimos ${SYNC_DAYS} dias desde ${cutoffDate}). Histórico antigo: ${hasHistory ? 'SIM ✅' : 'NÃO'}`);
           success = true;
         } catch (e) {
           retries--;
@@ -86,6 +122,39 @@ export class SyncService {
       if (!mediaData) continue;
 
       await this.dbService.updateMessageMedia(row.id, mediaData);
+    }
+  }
+
+  async syncAllContacts() {
+    if (!this.whatsappService.isReady) return;
+    try {
+      console.log('--- INICIANDO SINCRONISMO DE CONTATOS VIA CHATS ---');
+      const chats = await this.whatsappService.client.getChats();
+      console.log(`[SYNC-CONTACTS] Processando contatos de ${chats.length} chats...`);
+      
+      let count = 0;
+      for (const chat of chats) {
+        try {
+          const contact = await chat.getContact();
+          if (!contact || !contact.id) continue;
+          
+          await this.dbService.saveContact({
+            id: contact.id._serialized,
+            name: contact.name || contact.pushname || contact.id.user,
+            pushname: contact.pushname,
+            number: contact.number,
+            photoUrl: null, // Evitar peso excessivo no sync inicial
+            isGroup: chat.isGroup
+          });
+          count++;
+          if (count % 100 === 0) console.log(`[SYNC-CONTACTS] ${count}/${chats.length} contatos processados...`);
+        } catch (err) {
+          // Silencioso para não poluir o terminal, muitos contatos falham se arquivados
+        }
+      }
+      console.log(`--- SINCRONISMO DE CONTATOS CONCLUÍDO (${count} salvos) ---`);
+    } catch (e) {
+      console.error('Erro no syncAllContacts:', e.message);
     }
   }
 }

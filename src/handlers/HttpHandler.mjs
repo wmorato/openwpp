@@ -66,10 +66,23 @@ export class HttpHandler {
     try {
       const file = await fs.readFile(absolutePath);
       res.statusCode = 200;
-      res.setHeader('Content-Type', row.mediaMimeType);
+      res.setHeader('Content-Type', row.mediaMimeType.split(';')[0].trim());
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       res.end(file);
     } catch {
+      // Fallback: extensão antiga com params (ex: .ogg; codecs=opus)
+      const oldExt = row.mediaMimeType.split('/')[1] || 'bin';
+      if (oldExt !== extension) {
+        const oldPath = path.join(this.mediaDir, `${encodeURIComponent(messageId)}.${oldExt}`);
+        try {
+          const file = await fs.readFile(oldPath);
+          res.statusCode = 200;
+          res.setHeader('Content-Type', row.mediaMimeType.split(';')[0].trim());
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          res.end(file);
+          return;
+        } catch {}
+      }
       res.statusCode = 404;
       res.end('media file missing');
     }

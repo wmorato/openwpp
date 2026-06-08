@@ -29,6 +29,8 @@ export class MediaService {
   }
 
   extensionFromMimeType(mimeType = '') {
+    const cleanMime = mimeType.split(';')[0].trim();
+
     const map = {
       'image/jpeg': 'jpg',
       'image/png': 'png',
@@ -42,13 +44,14 @@ export class MediaService {
       'application/pdf': 'pdf',
     };
 
-    return map[mimeType] || mimeType.split('/')[1] || 'bin';
+    return map[cleanMime] || cleanMime.split('/')[1] || 'bin';
   }
 
   contentTypeFromMimeType(mimeType = '', messageType = 'chat') {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType.startsWith('audio/')) return 'audio';
+    const cleanMime = mimeType.split(';')[0].trim();
+    if (cleanMime.startsWith('image/')) return 'image';
+    if (cleanMime.startsWith('video/')) return 'video';
+    if (cleanMime.startsWith('audio/')) return 'audio';
     if (messageType === 'sticker') return 'sticker';
     if (messageType === 'document') return 'document';
     return 'file';

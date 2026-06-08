@@ -1,172 +1,168 @@
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import { PrismaClient } from '@prisma/client';
 
 export class DatabaseService {
-  constructor(dbPath) {
-    this.dbPath = dbPath;
-    this.db = null;
-  }
-
-  async connect() {
-    this.db = await open({
-      filename: this.dbPath,
-      driver: sqlite3.Database
-    });
-    return this.db;
+  constructor() {
+    this.prisma = new PrismaClient();
   }
 
   async init() {
-    if (!this.db) await this.connect();
-
-    await this.db.exec(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
-        chatId TEXT,
-        sender TEXT,
-        body TEXT,
-        timestamp INTEGER,
-        fromMe INTEGER
-      )
-    `);
-
-    await this.ensureMessageColumns();
-  }
-
-  async ensureMessageColumns() {
-    const columns = await this.db.all(`PRAGMA table_info(messages)`);
-    const columnNames = new Set(columns.map((column) => column.name));
-
-    const requiredColumns = [
-      ['contentType', `ALTER TABLE messages ADD COLUMN contentType TEXT DEFAULT 'text'`],
-      ['mediaMimeType', `ALTER TABLE messages ADD COLUMN mediaMimeType TEXT`],
-      ['mediaFilename', `ALTER TABLE messages ADD COLUMN mediaFilename TEXT`],
-      ['mediaUrl', `ALTER TABLE messages ADD COLUMN mediaUrl TEXT`],
-      ['quotedMsgId', `ALTER TABLE messages ADD COLUMN quotedMsgId TEXT`],
-      ['quotedMsgBody', `ALTER TABLE messages ADD COLUMN quotedMsgBody TEXT`],
-      ['quotedMsgSender', `ALTER TABLE messages ADD COLUMN quotedMsgSender TEXT`],
-    ];
-
-    for (const [name, sql] of requiredColumns) {
-      if (!columnNames.has(name)) {
-        await this.db.exec(sql);
-      }
+    try {
+      await this.prisma.$connect();
+      console.log('--- DATABASE SERVICE (PRISMA) READY ---');
+    } catch (e) {
+      console.error('Falha ao conectar ao banco com Prisma:', e.message);
     }
   }
 
   async loadStoredMessages(chatId, limit = 100) {
-    return this.db.all(
-      `SELECT id, chatId, sender, body, timestamp, fromMe, contentType, mediaMimeType, mediaFilename, mediaUrl, quotedMsgId, quotedMsgBody, quotedMsgSender
-       FROM (
-         SELECT rowid AS _rowid, id, chatId, sender, body, timestamp, fromMe, contentType, mediaMimeType, mediaFilename, mediaUrl, quotedMsgId, quotedMsgBody, quotedMsgSender
-         FROM messages
-         WHERE chatId = ?
-         ORDER BY CASE WHEN timestamp > 0 THEN timestamp ELSE rowid END DESC
-         LIMIT ?
-       )
-       ORDER BY CASE WHEN timestamp > 0 THEN timestamp ELSE _rowid END ASC`,
-      [chatId, limit]
-    );
+    return this.prisma.message.findMany({
+      where: { chatId },
+      take: limit,
+      orderBy: { timestamp: 'asc' }
+    });
   }
 
   async saveMessage(msgData, mediaData, normalizedBody) {
     try {
-      return await this.db.run(
-        `INSERT INTO messages (id, chatId, sender, body, timestamp, fromMe, contentType, mediaMimeType, mediaFilename, mediaUrl, quotedMsgId, quotedMsgBody, quotedMsgSender)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
-           chatId = excluded.chatId,
-           sender = CASE
-             WHEN messages.sender = 'me' THEN messages.sender
-             WHEN excluded.sender = 'me' THEN excluded.sender
-             WHEN messages.sender IS NULL OR messages.sender = '' OR messages.sender = '[object Object]' THEN excluded.sender
-             ELSE messages.sender
-           END,
-           body = CASE
-             WHEN excluded.contentType != 'text' THEN excluded.body
-             WHEN excluded.body IS NOT NULL AND excluded.body != '' THEN excluded.body
-             ELSE messages.body
-           END,
-           timestamp = CASE
-             WHEN excluded.timestamp > 0 THEN excluded.timestamp
-             ELSE messages.timestamp
-           END,
-           fromMe = CASE
-             WHEN excluded.fromMe = 1 THEN 1
-             ELSE messages.fromMe
-           END,
-           contentType = CASE
-             WHEN excluded.contentType != 'text' THEN excluded.contentType
-             ELSE messages.contentType
-           END,
-           mediaMimeType = COALESCE(excluded.mediaMimeType, messages.mediaMimeType),
-           mediaFilename = COALESCE(excluded.mediaFilename, messages.mediaFilename),
-           mediaUrl = COALESCE(excluded.mediaUrl, messages.mediaUrl),
-           quotedMsgId = COALESCE(excluded.quotedMsgId, messages.quotedMsgId),
-           quotedMsgBody = COALESCE(excluded.quotedMsgBody, messages.quotedMsgBody),
-           quotedMsgSender = COALESCE(excluded.quotedMsgSender, messages.quotedMsgSender)`,
-        [
-          msgData.id,
-          msgData.chatId,
-          msgData.sender,
-          normalizedBody,
-          msgData.timestamp,
-          msgData.fromMe,
-          mediaData.contentType,
-          mediaData.mediaMimeType,
-          mediaData.mediaFilename,
-          mediaData.mediaUrl,
-          msgData.quotedMsgId,
-          msgData.quotedMsgBody,
-          msgData.quotedMsgSender,
-        ]
-      );
+      // Usamos upsert para evitar duplicatas e manter a lógica de atualização
+      return await this.prisma.message.upsert({
+        where: { id: msgData.id },
+        update: {
+          chatId: msgData.chatId,
+          sender: msgData.sender === 'me' ? 'me' : msgData.sender,
+          body: normalizedBody,
+          timestamp: msgData.timestamp,
+          fromMe: msgData.fromMe,
+          contentType: mediaData.contentType,
+          mediaMimeType: mediaData.mediaMimeType,
+          mediaFilename: mediaData.mediaFilename,
+          mediaUrl: mediaData.mediaUrl,
+          quotedMsgId: msgData.quotedMsgId,
+          quotedMsgBody: msgData.quotedMsgBody,
+          quotedMsgSender: msgData.quotedMsgSender,
+        },
+        create: {
+          id: msgData.id,
+          chatId: msgData.chatId,
+          sender: msgData.sender,
+          body: normalizedBody,
+          timestamp: msgData.timestamp,
+          fromMe: msgData.fromMe,
+          contentType: mediaData.contentType,
+          mediaMimeType: mediaData.mediaMimeType,
+          mediaFilename: mediaData.mediaFilename,
+          mediaUrl: mediaData.mediaUrl,
+          quotedMsgId: msgData.quotedMsgId,
+          quotedMsgBody: msgData.quotedMsgBody,
+          quotedMsgSender: msgData.quotedMsgSender,
+        }
+      });
     } catch (e) {
-      console.error('Erro ao salvar no banco:', e.message);
+      console.error('Erro ao salvar no banco (Prisma):', e.message);
       throw e;
     }
   }
 
+  // --- Novos Métodos da Fase 1 ---
+
+  async saveContact(contactData) {
+    return this.prisma.contact.upsert({
+      where: { id: contactData.id },
+      update: {
+        name: contactData.name,
+        pushname: contactData.pushname,
+        number: contactData.number,
+        photoUrl: contactData.photoUrl,
+        isGroup: contactData.isGroup || false
+      },
+      create: {
+        id: contactData.id,
+        name: contactData.name,
+        pushname: contactData.pushname,
+        number: contactData.number,
+        photoUrl: contactData.photoUrl,
+        isGroup: contactData.isGroup || false
+      }
+    });
+  }
+
+  async saveChat(chatData) {
+    return this.prisma.chat.upsert({
+      where: { id: chatData.id },
+      update: {
+        name: chatData.name,
+        timestamp: chatData.timestamp,
+        unreadCount: chatData.unreadCount,
+        lastMessageId: chatData.lastMessageId
+      },
+      create: {
+        id: chatData.id,
+        name: chatData.name,
+        timestamp: chatData.timestamp,
+        unreadCount: chatData.unreadCount,
+        lastMessageId: chatData.lastMessageId
+      }
+    });
+  }
+
+  async searchContactsLocal(query) {
+    const q = query.toLowerCase();
+    return this.prisma.contact.findMany({
+      where: {
+        OR: [
+          { name: { contains: q } },
+          { pushname: { contains: q } },
+          { id: { contains: q } }
+        ]
+      },
+      take: 50
+    });
+  }
+
   async getMessagesForBackfill() {
-    return this.db.all(
-      `SELECT id, body, contentType, mediaUrl, mediaMimeType
-       FROM messages
-       WHERE (contentType IS NULL OR contentType = 'text')
-         AND (mediaUrl IS NULL OR mediaUrl = '')
-         AND length(body) > 120`
-    );
+    return this.prisma.message.findMany({
+      where: {
+        OR: [
+          { contentType: null },
+          { contentType: 'text' }
+        ],
+        AND: [
+          { mediaUrl: null },
+          { body: { not: null } }
+        ]
+      }
+    });
   }
 
   async updateMessageMedia(messageId, mediaData) {
-    return this.db.run(
-      `UPDATE messages
-       SET body = '',
-           contentType = ?,
-           mediaMimeType = ?,
-           mediaFilename = ?,
-           mediaUrl = ?
-       WHERE id = ?`,
-      [
-        mediaData.contentType,
-        mediaData.mediaMimeType,
-        mediaData.mediaFilename,
-        mediaData.mediaUrl,
-        messageId,
-      ]
-    );
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: {
+        body: '',
+        contentType: mediaData.contentType,
+        mediaMimeType: mediaData.mediaMimeType,
+        mediaFilename: mediaData.mediaFilename,
+        mediaUrl: mediaData.mediaUrl
+      }
+    });
   }
 
   async getMediaInfo(messageId) {
-    return this.db.get(
-      'SELECT mediaFilename, mediaMimeType FROM messages WHERE id = ?',
-      [messageId]
-    );
+    return this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { mediaFilename: true, mediaMimeType: true }
+    });
   }
 
   async getStatus() {
-    const msgs = await this.db.all('SELECT * FROM messages ORDER BY timestamp DESC LIMIT 20');
+    const total = await this.prisma.message.count();
+    const recent = await this.prisma.message.findMany({
+      take: 20,
+      orderBy: { timestamp: 'desc' }
+    });
     return {
-      localDbCount: (await this.db.get('SELECT COUNT(*) as count FROM messages')).count,
-      recent: msgs
+      localDbCount: total,
+      recent
     };
   }
 }

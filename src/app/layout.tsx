@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "OpenWPP | WhatsApp Dynamic Dashboard",
-  description: "Advanced WhatsApp management with Antigravity Design",
+  title: "OpenWPP | Central de Atendimento",
+  description: "Multi-workspace WhatsApp management platform",
 };
 
 export default function RootLayout({
@@ -18,8 +18,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className={`${inter.variable} font-sans min-h-screen`}>{children}</body>
+    <html lang="pt-BR" className="h-full">
+      <body className={`${inter.variable} font-sans h-full antialiased`}>{children}</body>
     </html>
   );
 }
