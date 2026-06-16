@@ -54,38 +54,33 @@ export class HttpHandler {
 
     const row = await this.dbService.getMediaInfo(messageId);
 
-    if (!row?.mediaFilename || !row?.mediaMimeType) {
+    if (!row?.mediaMimeType) {
       res.statusCode = 404;
       res.end('media not found');
       return;
     }
 
-    const extension = this.whatsappService.mediaService.extensionFromMimeType(row.mediaMimeType);
-    const absolutePath = path.join(this.mediaDir, `${encodeURIComponent(messageId)}.${extension}`);
+    const result = await this.whatsappService.mediaService.getMediaFileOrDownload(
+      this.whatsappService.client, messageId, row.mediaMimeType, row.contentType
+    );
 
-    try {
-      const file = await fs.readFile(absolutePath);
-      res.statusCode = 200;
-      res.setHeader('Content-Type', row.mediaMimeType.split(';')[0].trim());
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      res.end(file);
-    } catch {
-      // Fallback: extensão antiga com params (ex: .ogg; codecs=opus)
-      const oldExt = row.mediaMimeType.split('/')[1] || 'bin';
-      if (oldExt !== extension) {
-        const oldPath = path.join(this.mediaDir, `${encodeURIComponent(messageId)}.${oldExt}`);
-        try {
-          const file = await fs.readFile(oldPath);
-          res.statusCode = 200;
-          res.setHeader('Content-Type', row.mediaMimeType.split(';')[0].trim());
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          res.end(file);
-          return;
-        } catch {}
-      }
+    if (!result) {
       res.statusCode = 404;
-      res.end('media file missing');
+      res.end('media not available');
+      return;
     }
+
+    // Update DB if media was just downloaded (first access)
+    if (!result.fromCache && result.persistResult) {
+      try {
+        await this.dbService.updateMessageMedia(messageId, result.persistResult);
+      } catch { /* non-critical */ }
+    }
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', result.mimeType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.end(result.file);
   }
 
   async handleDebugChat(req, res, query) {

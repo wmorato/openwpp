@@ -150,7 +150,7 @@ export class DatabaseService {
   async getMediaInfo(messageId) {
     return this.prisma.message.findUnique({
       where: { id: messageId },
-      select: { mediaFilename: true, mediaMimeType: true }
+      select: { mediaFilename: true, mediaMimeType: true, contentType: true }
     });
   }
 

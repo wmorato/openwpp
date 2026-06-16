@@ -177,4 +177,40 @@ export class MediaService {
       mediaUrl: `/api/media?id=${encodeURIComponent(messageId)}`,
     };
   }
+
+  getMediaPath(messageId, extension) {
+    return path.join(this.mediaDir, `${encodeURIComponent(messageId)}.${extension}`);
+  }
+
+  async getMediaFileOrDownload(client, messageId, mimeType, contentType) {
+    const extension = this.extensionFromMimeType(mimeType);
+    const filePath = this.getMediaPath(messageId, extension);
+
+    try {
+      const file = await fs.readFile(filePath);
+      return { file, mimeType: mimeType.split(';')[0].trim(), fromCache: true };
+    } catch {
+      // File not in cache, download it
+    }
+
+    if (!client?.pupPage) return null;
+
+    try {
+      const mediaPayload = await this.downloadMediaForRawMessage(client, messageId);
+      if (!mediaPayload?.data) return null;
+
+      const messageType = contentType === 'sticker' ? 'sticker' : 'chat';
+      const persistResult = await this.persistMediaPayload(messageId, mediaPayload, messageType);
+      if (!persistResult) return null;
+
+      const extension2 = this.extensionFromMimeType(mediaPayload.mimetype);
+      const filePath2 = this.getMediaPath(messageId, extension2);
+      const file = await fs.readFile(filePath2);
+
+      return { file, mimeType: mediaPayload.mimetype.split(';')[0].trim(), fromCache: false, persistResult };
+    } catch (error) {
+      console.warn(`[MEDIA] download-on-demand falhou para ${messageId}: ${error.message}`);
+      return null;
+    }
+  }
 }

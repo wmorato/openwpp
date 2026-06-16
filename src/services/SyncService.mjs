@@ -106,55 +106,43 @@ export class SyncService {
     console.log(`--- BACKGROUND SYNC CONCLUÍDO ---`);
   }
 
-  async backfillMedia() {
-    const rows = await this.dbService.getMessagesForBackfill();
-
-    for (const row of rows) {
-      if (!this.whatsappService.mediaService.isLikelyBase64(row.body)) continue;
-
-      const mediaPayload = {
-        data: row.body,
-        mimetype: row.mediaMimeType || this.whatsappService.mediaService.inferMimeTypeFromBody(row.body),
-        filename: null,
-      };
-
-      const mediaData = await this.whatsappService.mediaService.persistMediaPayload(row.id, mediaPayload);
-      if (!mediaData) continue;
-
-      await this.dbService.updateMessageMedia(row.id, mediaData);
-    }
-  }
-
-  async syncAllContacts() {
+  async syncContactsIncremental() {
     if (!this.whatsappService.isReady) return;
     try {
-      console.log('--- INICIANDO SINCRONISMO DE CONTATOS VIA CHATS ---');
       const chats = await this.whatsappService.client.getChats();
-      console.log(`[SYNC-CONTACTS] Processando contatos de ${chats.length} chats...`);
-      
+      const BATCH = 50;
+      const DELAY_MS = 2000;
       let count = 0;
-      for (const chat of chats) {
-        try {
-          const contact = await chat.getContact();
-          if (!contact || !contact.id) continue;
-          
-          await this.dbService.saveContact({
-            id: contact.id._serialized,
-            name: contact.name || contact.pushname || contact.id.user,
-            pushname: contact.pushname,
-            number: contact.number,
-            photoUrl: null, // Evitar peso excessivo no sync inicial
-            isGroup: chat.isGroup
-          });
-          count++;
-          if (count % 100 === 0) console.log(`[SYNC-CONTACTS] ${count}/${chats.length} contatos processados...`);
-        } catch (err) {
-          // Silencioso para não poluir o terminal, muitos contatos falham se arquivados
-        }
+
+      for (let i = 0; i < chats.length; i += BATCH) {
+        if (!this.whatsappService.isReady) break;
+        const batch = chats.slice(i, i + BATCH);
+
+        await Promise.allSettled(batch.map(async (chat) => {
+          try {
+            const existing = await this.dbService.prisma.contact.findUnique({ where: { id: chat.id._serialized } });
+            if (existing) return;
+            const contact = await chat.getContact();
+            if (!contact?.id) return;
+            await this.dbService.saveContact({
+              id: contact.id._serialized,
+              name: contact.name || contact.pushname || contact.id.user,
+              pushname: contact.pushname,
+              number: contact.number,
+              photoUrl: null,
+              isGroup: chat.isGroup,
+            });
+            count++;
+          } catch { /* silencioso */ }
+        }));
+
+        if (count % 100 === 0) console.log(`[CONTACTS] ${Math.min(i + BATCH, chats.length)}/${chats.length} processados (${count} novos salvos)`);
+        await new Promise(r => setTimeout(r, DELAY_MS));
       }
-      console.log(`--- SINCRONISMO DE CONTATOS CONCLUÍDO (${count} salvos) ---`);
+
+      if (count > 0) console.log(`[CONTACTS] Sync incremental concluído: ${count} novos contatos salvos`);
     } catch (e) {
-      console.error('Erro no syncAllContacts:', e.message);
+      console.error('Erro no syncContactsIncremental:', e.message);
     }
   }
 }

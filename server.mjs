@@ -53,14 +53,12 @@ app.prepare().then(async () => {
   const SYNC_CHATS = parseInt(process.env.SYNC_CHATS || '200', 10);
 
   whatsappService.setOnReady(() => {
-    console.log('--- INICIANDO PROCESSAMENTO DE BACKFILL E SYNC EM SEGUNDO PLANO ---');
-    syncService.backfillMedia().catch(e => console.error('Erro no backfillMedia:', e));
+    console.log('--- INICIANDO PROCESSAMENTO DE SYNC EM SEGUNDO PLANO ---');
     whatsappService.getChatsCached().then(chats => {
         console.log(`--- ${chats.length} CHATS ENCONTRADOS. INICIANDO PROCESSAMENTO (max ${SYNC_CHATS})... ---`);
         const sorted = chats.sort((a, b) => (b.unreadCount || 0) - (a.unreadCount || 0));
         syncService.addToQueue(sorted.slice(0, SYNC_CHATS));
         syncService.processQueue();
-        syncService.syncAllContacts();
     }).catch(e => console.error('Erro ao buscar chats iniciais:', e));
   });
 

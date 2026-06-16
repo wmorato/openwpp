@@ -33,6 +33,16 @@ npm start          # Produção (NODE_ENV=production node server.mjs)
 - Monitorado via ms-monitor (container `ms-openwpp-pg`)
 - WhatsApp auth: `/var/www/.wwebjs_auth_openwpp/`
 
+## Puppeteer & Estabilidade
+- `protocolTimeout: 120_000` configurado no Client (WhatsAppService.mjs)
+- Chrome args hardening: `--disable-dev-shm-usage`, `--no-first-run`, `--disable-default-apps`, `--disable-background-networking`
+- Auto-reconnect automático em caso de `disconnected` (até 5 tentativas com backoff)
+- Monitor: `/var/www/ms-openwpp/monitor/check_health.sh` (cron a cada 1h)
+- Restart preventivo: domingo 04:00 via cron
+- Lazy media — download sob demanda via `/api/media` (sem baixar no momento da mensagem)
+- Sem `backfillMedia` ou `syncAllContacts` no startup
+- Cleanup `.media-cache/`: domingo 05:00 via cron (arquivos não acessados há >7 dias)
+
 ## Observações
 - Prisma v5 usado por compatibilidade (v6 depende de effect/fast-check que quebra no Node v22)
 - Polyfill `stream/Stream` removido após downgrade para Prisma v5

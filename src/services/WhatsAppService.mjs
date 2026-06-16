@@ -13,7 +13,15 @@ export class WhatsAppService extends EventEmitter {
     this.isReady = false;
     this.chatsCachePromise = null;
     
-    this.client = new Client({
+    this.restartAttempts = 0;
+    this.maxRestartAttempts = 5;
+    
+    this.client = this.createClient();
+    this.setupListeners();
+  }
+
+  createClient() {
+    return new Client({
       authStrategy: new LocalAuth({ dataPath: '../.wwebjs_auth_openwpp' }),
       webVersionCache: {
         type: 'remote',
@@ -21,11 +29,14 @@ export class WhatsAppService extends EventEmitter {
       },
       puppeteer: {
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+          '--no-sandbox', '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage', '--no-first-run',
+          '--disable-default-apps', '--disable-background-networking'
+        ],
+        protocolTimeout: 120_000
       }
     });
-
-    this.setupListeners();
   }
 
   setupListeners() {
@@ -39,6 +50,7 @@ export class WhatsAppService extends EventEmitter {
 
     this.client.on('ready', async () => {
       console.log('--- WHATSAPP IS READY (DB ACTIVE) ---');
+      this.restartAttempts = 0;
       this.isReady = true;
       this.emit('ready');
       
@@ -50,6 +62,33 @@ export class WhatsAppService extends EventEmitter {
     this.client.on('message_create', async (msg) => {
       await this.saveMessage(msg, true);
     });
+
+    this.client.on('disconnected', async (reason) => {
+      console.warn('--- WHATSAPP DISCONNECTED ---', reason);
+      this.isReady = false;
+      this.emit('disconnected', reason);
+      await this.reconnect();
+    });
+  }
+
+  async reconnect() {
+    this.restartAttempts++;
+    if (this.restartAttempts > this.maxRestartAttempts) {
+      console.error(`--- MAX RECONNECT ATTEMPTS (${this.maxRestartAttempts}) REACHED. Giving up. ---`);
+      process.exit(1);
+    }
+    const delay = Math.min(5000 * this.restartAttempts, 60000);
+    console.log(`--- RECONNECTING in ${delay/1000}s (attempt ${this.restartAttempts}/${this.maxRestartAttempts}) ---`);
+    await new Promise(r => setTimeout(r, delay));
+    try {
+      this.destroy();
+      this.client = this.createClient();
+      this.setupListeners();
+      await this.initialize();
+    } catch (e) {
+      console.error('--- RECONNECT FAILED ---', e.message);
+      await this.reconnect();
+    }
   }
 
   async initialize() {
@@ -76,16 +115,21 @@ export class WhatsAppService extends EventEmitter {
     }
 
     const msgData = mapWhatsAppMessage(msg, requestedChatId);
-    const mediaPayload = await this.mediaService.resolveMediaPayload(this.client, msg, msgData);
-    const mediaData = mediaPayload
-      ? await this.mediaService.persistMediaPayload(msgData.id, mediaPayload, msgData.messageType)
+    const mimeFallback = { image: 'image/jpeg', video: 'video/mp4', audio: 'audio/ogg', document: 'application/pdf', sticker: 'image/webp' };
+    const mediaData = msgData.hasMedia
+      ? {
+          contentType: this.contentTypeFromMessageType(msgData.messageType),
+          mediaMimeType: msgData.mimetype || mimeFallback[msgData.messageType] || 'application/octet-stream',
+          mediaFilename: msgData.filename || null,
+          mediaUrl: null,
+        }
       : {
           contentType: 'text',
           mediaMimeType: null,
           mediaFilename: null,
           mediaUrl: null,
         };
-    const normalizedBody = mediaPayload && this.mediaService.isLikelyBase64(msgData.body) ? '' : msgData.body;
+    const normalizedBody = msgData.body;
 
     try {
       const result = await this.dbService.saveMessage(msgData, mediaData, normalizedBody);
@@ -101,6 +145,20 @@ export class WhatsAppService extends EventEmitter {
     } catch (e) {
       console.error('WhatsAppService Error saving:', e.message);
     }
+  }
+
+  contentTypeFromMessageType(messageType) {
+    const map = {
+      'image': 'image',
+      'video': 'video',
+      'audio': 'audio',
+      'ptt': 'audio',
+      'document': 'document',
+      'sticker': 'sticker',
+      'contact': 'file',
+      'location': 'file',
+    };
+    return map[messageType] || 'file';
   }
 
   async getChatsCached() {
@@ -134,35 +192,6 @@ export class WhatsAppService extends EventEmitter {
   async getContacts() {
     if (!this.isReady) throw new Error('Client not ready');
     const contacts = await this.client.getContacts();
-    const realPeople = contacts.filter(c => c && c.id && c.isUser && !c.isStatus && !c.isGroup);
-    console.log(`[CONTACTS] Total: ${contacts.length} (Pessoas reais filtradas: ${realPeople.length})`);
-    
-    const targets = ['gustavo', 'dikamor'];
-    
-    // Debug: ver primeiros nomes para entender a lista de 17k
-    console.log('[SEARCH-DEBUG] Primeiros 20 nomes na lista de 17k:', 
-      contacts.slice(0, 20).map(c => `${c.name || c.pushname || 'S/N'} (${c.id?._serialized})`).join(', ')
-    );
-
-    targets.forEach(t => {
-      const found = contacts.filter(c => 
-        (c.name || '').toLowerCase().includes(t) || 
-        (c.pushname || '').toLowerCase().includes(t) ||
-        (c.id?._serialized || '').toLowerCase().includes(t)
-      );
-      if (found.length > 0) {
-        console.log(`[SEARCH-DEBUG] Encontrado alvo "${t}" em CONTATOS:`, found.map(f => ({ n: f.name, p: f.pushname, id: f.id?._serialized, isUser: f.isUser })));
-      }
-    });
-
-    const chats = await this.client.getChats();
-    targets.forEach(t => {
-      const found = chats.filter(c => (c.name || '').toLowerCase().includes(t));
-      if (found.length > 0) {
-        console.log(`[SEARCH-DEBUG] Encontrado alvo "${t}" em CHATS:`, found.map(f => ({ n: f.name, id: f.id?._serialized })));
-      }
-    });
-
     return contacts;
   }
 
@@ -172,9 +201,8 @@ export class WhatsAppService extends EventEmitter {
 
   destroy() {
     if (this.client) {
-      try { this.client.destroy(); } catch (e) { console.error('Error destroying client:', e); }
+      try { this.client.removeAllListeners(); this.client.destroy(); } catch (e) { console.error('Error destroying client:', e); }
     }
-    this.removeAllListeners();
     this.isReady = false;
   }
 }
