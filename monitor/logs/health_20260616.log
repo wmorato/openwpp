@@ -63,3 +63,58 @@
 [2026-06-16 12:00:01] [INFO] ✅ Chrome: 352MB (PID 435916)
 [2026-06-16 12:00:01] [INFO] ✅ Disco: 61% usado
 [2026-06-16 12:00:04] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 13:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 13:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 13:00:01] [INFO] ✅ Chrome: 352MB (PID 435916)
+[2026-06-16 13:00:01] [INFO] ✅ Disco: 61% usado
+[2026-06-16 13:00:03] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 14:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 14:00:02] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 14:00:02] [INFO] ✅ Chrome: 365MB (PID 435916)
+[2026-06-16 14:00:02] [INFO] ✅ Disco: 63% usado
+[2026-06-16 14:00:02] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 15:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 15:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 15:00:02] [INFO] ✅ Chrome: 1026MB (PID 435916)
+[2026-06-16 15:00:02] [INFO] ✅ Disco: 63% usado
+[2026-06-16 15:00:02] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 16:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 16:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 16:00:01] [INFO] ✅ Chrome: 1018MB (PID 435916)
+[2026-06-16 16:00:01] [INFO] ✅ Disco: 63% usado
+[2026-06-16 16:00:02] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 17:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 17:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 17:00:02] [INFO] ✅ Chrome: 1030MB (PID 435916)
+[2026-06-16 17:00:02] [INFO] ✅ Disco: 63% usado
+[2026-06-16 17:00:02] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 18:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 18:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 18:00:02] [INFO] ✅ Chrome: 1028MB (PID 435916)
+[2026-06-16 18:00:02] [INFO] ✅ Disco: 64% usado
+[2026-06-16 18:00:04] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 19:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 19:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 19:00:01] [INFO] ✅ Chrome: 1582MB (PID 435916)
+[2026-06-16 19:00:01] [INFO] ✅ Disco: 64% usado
+[2026-06-16 19:00:03] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 20:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 20:00:02] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 20:00:02] [INFO] ✅ Chrome: 1579MB (PID 435916)
+[2026-06-16 20:00:02] [INFO] ✅ Disco: 64% usado
+[2026-06-16 20:00:04] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 21:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 21:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 21:00:02] [INFO] ✅ Chrome: 1575MB (PID 435916)
+[2026-06-16 21:00:02] [INFO] ✅ Disco: 64% usado
+[2026-06-16 21:00:03] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 22:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 22:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 22:00:02] [INFO] ✅ Chrome: 1578MB (PID 435916)
+[2026-06-16 22:00:02] [INFO] ✅ Disco: 64% usado
+[2026-06-16 22:00:04] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-16 23:00:01] [ERRO] ❌ HTTP não respondeu (código: 307)
+[2026-06-16 23:00:01] [INFO] ✅ WhatsApp: Conectado
+[2026-06-16 23:00:01] [INFO] ✅ Chrome: 1576MB (PID 435916)
+[2026-06-16 23:00:01] [INFO] ✅ Disco: 64% usado
+[2026-06-16 23:00:02] [INFO] Notificação enviada para grupo Server_notification

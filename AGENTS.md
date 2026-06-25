@@ -33,6 +33,13 @@ npm start          # Produção (NODE_ENV=production node server.mjs)
 - Monitorado via ms-monitor (container `ms-openwpp-pg`)
 - WhatsApp auth: `/var/www/.wwebjs_auth_openwpp/`
 
+## API Endpoints (HttpHandler)
+- `GET /api/health` → `{ status, hasQrCode, timestamp }`
+- `GET /api/qrcode` → JSON com `qrCodeUrl` (base64 data URL)
+- `GET /api/qrcode?format=image` → PNG direto da imagem do QR Code
+- `GET /api/media?id=<messageId>` → download de mídia
+- QR Code também disponível via WebSocket (evento `qr`)
+
 ## Puppeteer & Estabilidade
 - `protocolTimeout: 120_000` configurado no Client (WhatsAppService.mjs)
 - Chrome args hardening: `--disable-dev-shm-usage`, `--no-first-run`, `--disable-default-apps`, `--disable-background-networking`

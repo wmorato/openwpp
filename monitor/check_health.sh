@@ -12,11 +12,15 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/health_$(date +%Y%m%d).log"
 
 # Evolution API para notificações
-EVO_API_URL="http://localhost:5030"
-EVO_INSTANCE="MS_Morato"
-EVO_TOKEN="F49763A794EB-4ACE-8523-EA1B7FD29216"
-NOTIFICATION_GROUP="120363409484120144@g.us"
-NOTIFICATION_FALLBACK="5513988506358@s.whatsapp.net"
+SECRETS_FILE="/var/www/secrets/ms-openwpp-monitor.env"
+if [ -f "$SECRETS_FILE" ]; then
+    set -a
+    source "$SECRETS_FILE"
+    set +a
+else
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERRO] Secrets file not found: $SECRETS_FILE" >> "$LOG_FILE"
+    exit 1
+fi
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$1] $2" | tee -a "$LOG_FILE"; }
 log_info() { log "INFO" "$1"; }
@@ -53,7 +57,7 @@ send_notification() {
 alerts=""
 
 # 1. API health
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 http://localhost:3000/ 2>/dev/null || echo "000")
+HTTP_CODE=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 10 http://localhost:3000/ 2>/dev/null || echo "000")
 if [ "$HTTP_CODE" = "200" ]; then
     log_info "✅ HTTP respondendo (200)"
 else
@@ -61,14 +65,18 @@ else
     alerts="${alerts}🔴 ms-openwpp HTTP não responde (código: $HTTP_CODE)\n"
 fi
 
-# 2. WhatsApp status via /api/debug
-DEBUG=$(curl -s --max-time 10 http://localhost:3000/api/debug 2>/dev/null || echo "{}")
-WA_STATUS=$(echo "$DEBUG" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('status','unknown'))" 2>/dev/null || echo "unknown")
+# 2. WhatsApp status via /api/health (endpoint interno, sem dados sensíveis)
+HEALTH=$(curl -s --max-time 10 http://localhost:3000/api/health 2>/dev/null || echo "{}")
+WA_STATUS=$(echo "$HEALTH" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('status','unknown'))" 2>/dev/null || echo "unknown")
+WA_HAS_QR=$(echo "$HEALTH" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('hasQrCode',False))" 2>/dev/null || echo "false")
 if [ "$WA_STATUS" = "Conectado" ]; then
     log_info "✅ WhatsApp: Conectado"
+elif [ "$WA_HAS_QR" = "True" ]; then
+    log_warn "⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)"
+    alerts="${alerts}📱 WhatsApp aguardando leitura de QR Code — escaneie em chat.moratosolucoes.com.br\n"
 else
-    log_warn "⚠️ WhatsApp: $WA_STATUS"
-    alerts="${alerts}⚠️ WhatsApp desconectado (status: $WA_STATUS)\n"
+    log_warn "⚠️ WhatsApp: $WA_STATUS (sem QR disponível)"
+    alerts="${alerts}⚠️ WhatsApp desconectado (status: $WA_STATUS, sem QR Code)\n"
 fi
 
 # 3. Chrome memory

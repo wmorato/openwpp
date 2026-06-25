@@ -11,7 +11,7 @@ import { HttpHandler } from './src/handlers/HttpHandler.mjs';
 import { SocketHandler } from './src/handlers/SocketHandler.mjs';
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = '0.0.0.0';
+const hostname = '127.0.0.1';
 const port = parseInt(process.env.PORT || '3000', 10);
 
 const app = next({ dev, hostname, port });
