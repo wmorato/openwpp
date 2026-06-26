@@ -1,0 +1,15 @@
+[2026-06-26 00:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-26 00:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-26 00:00:01] [INFO] ✅ Chrome: 368MB (PID 3816214)
+[2026-06-26 00:00:01] [INFO] ✅ Disco: 74% usado
+[2026-06-26 00:00:03] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-26 01:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-26 01:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-26 01:00:01] [INFO] ✅ Chrome: 368MB (PID 3816214)
+[2026-06-26 01:00:01] [INFO] ✅ Disco: 75% usado
+[2026-06-26 01:00:03] [INFO] Notificação enviada para grupo Server_notification
+[2026-06-26 02:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-26 02:00:02] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-26 02:00:02] [INFO] ✅ Chrome: 370MB (PID 3816214)
+[2026-06-26 02:00:02] [INFO] ✅ Disco: 76% usado
+[2026-06-26 02:00:03] [INFO] Notificação enviada para grupo Server_notification
