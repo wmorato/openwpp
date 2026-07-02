@@ -1,0 +1,144 @@
+[2026-06-30 00:00:02] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 00:00:02] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 00:00:02] [INFO] ✅ Chrome: 451MB (PID 3816214)
+[2026-06-30 00:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 00:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 00:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 01:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 01:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 01:00:01] [INFO] ✅ Chrome: 450MB (PID 3816214)
+[2026-06-30 01:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 01:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 01:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 02:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 02:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 02:00:01] [INFO] ✅ Chrome: 458MB (PID 3816214)
+[2026-06-30 02:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 02:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 02:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 03:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 03:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 03:00:01] [INFO] ✅ Chrome: 461MB (PID 3816214)
+[2026-06-30 03:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 03:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 03:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 04:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 04:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 04:00:01] [INFO] ✅ Chrome: 461MB (PID 3816214)
+[2026-06-30 04:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 04:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 04:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 05:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 05:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 05:00:02] [INFO] ✅ Chrome: 464MB (PID 3816214)
+[2026-06-30 05:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 05:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 05:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 06:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 06:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 06:00:01] [INFO] ✅ Chrome: 465MB (PID 3816214)
+[2026-06-30 06:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 06:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 06:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 07:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 07:00:02] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 07:00:02] [INFO] ✅ Chrome: 470MB (PID 3816214)
+[2026-06-30 07:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 07:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 07:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 08:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 08:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 08:00:01] [INFO] ✅ Chrome: 472MB (PID 3816214)
+[2026-06-30 08:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 08:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 08:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 09:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 09:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 09:00:01] [INFO] ✅ Chrome: 477MB (PID 3816214)
+[2026-06-30 09:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 09:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 09:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 10:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 10:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 10:00:01] [INFO] ✅ Chrome: 475MB (PID 3816214)
+[2026-06-30 10:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 10:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 10:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 11:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 11:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 11:00:01] [INFO] ✅ Chrome: 477MB (PID 3816214)
+[2026-06-30 11:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 11:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 11:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 12:00:02] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 12:00:02] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 12:00:02] [INFO] ✅ Chrome: 480MB (PID 3816214)
+[2026-06-30 12:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 12:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 12:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 13:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 13:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 13:00:01] [INFO] ✅ Chrome: 485MB (PID 3816214)
+[2026-06-30 13:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 13:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 13:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 14:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 14:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 14:00:01] [INFO] ✅ Chrome: 483MB (PID 3816214)
+[2026-06-30 14:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 14:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 14:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 15:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 15:00:02] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 15:00:02] [INFO] ✅ Chrome: 487MB (PID 3816214)
+[2026-06-30 15:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 15:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 15:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 16:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 16:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 16:00:02] [INFO] ✅ Chrome: 471MB (PID 3816214)
+[2026-06-30 16:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 16:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 16:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 17:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 17:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 17:00:01] [INFO] ✅ Chrome: 475MB (PID 3816214)
+[2026-06-30 17:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 17:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 17:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 18:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 18:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 18:00:02] [INFO] ✅ Chrome: 476MB (PID 3816214)
+[2026-06-30 18:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 18:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 18:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 19:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 19:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 19:00:01] [INFO] ✅ Chrome: 478MB (PID 3816214)
+[2026-06-30 19:00:01] [INFO] ✅ Disco: 84% usado
+[2026-06-30 19:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 19:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 20:00:02] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 20:00:02] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 20:00:02] [INFO] ✅ Chrome: 463MB (PID 3816214)
+[2026-06-30 20:00:02] [INFO] ✅ Disco: 84% usado
+[2026-06-30 20:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 20:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 21:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 21:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 21:00:01] [INFO] ✅ Chrome: 464MB (PID 3816214)
+[2026-06-30 21:00:01] [INFO] ✅ Disco: 85% usado
+[2026-06-30 21:00:01] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 21:00:01] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 22:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 22:00:02] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 22:00:02] [INFO] ✅ Chrome: 470MB (PID 3816214)
+[2026-06-30 22:00:02] [INFO] ✅ Disco: 85% usado
+[2026-06-30 22:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 22:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
+[2026-06-30 23:00:01] [INFO] ✅ HTTP respondendo (200)
+[2026-06-30 23:00:01] [WARN] ⚠️ WhatsApp: Aguardando leitura de QR Code (acesse /api/qrcode para escanear)
+[2026-06-30 23:00:02] [INFO] ✅ Chrome: 492MB (PID 3816214)
+[2026-06-30 23:00:02] [INFO] ✅ Disco: 85% usado
+[2026-06-30 23:00:02] [WARN] Falha no grupo, tentando fallback...
+[2026-06-30 23:00:02] [ERRO] FALHA CRÍTICA: não foi possível enviar notificação
